@@ -141,6 +141,9 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 .today-label { font-size:12px; color:var(--muted); margin-top:4px; }
 .today-mods { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:12px; }
 .today-mod { font-size:11px; padding:3px 8px; border-radius:12px; }
+.tm-pos { background:rgba(74,222,128,.12); color:var(--green); }
+.tm-neg { background:rgba(200,240,74,.1); color:var(--accent); }
+.tm-neutral { background:var(--surface3); color:var(--muted); }
 
 .event-mini { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
 .event-mini:last-child { border-bottom:none; }
@@ -151,11 +154,10 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 
 .comp-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
 .comp-row:last-child { border-bottom:none; }
-.comp-name { font-size:12px; font-weight:500; }
-.comp-stars { font-size:10px; color:var(--accent3); margin-left:4px; }
-.comp-price { font-family:'DM Mono',monospace; font-size:13px; }
-.comp-id { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); background:var(--surface2); padding:2px 6px; border-radius:4px; margin-left:8px; }
-.comp-bar { flex:1; margin:0 12px; height:4px; background:var(--surface3); border-radius:2px; overflow:hidden; }
+.comp-name { font-size:12px; font-weight:500; flex:1; }
+.comp-price { font-family:'DM Mono',monospace; font-size:13px; margin-left:12px; }
+.comp-id { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); background:var(--surface2); padding:2px 6px; border-radius:4px; margin-left:8px; white-space:nowrap; }
+.comp-bar { flex:2; margin:0 12px; height:4px; background:var(--surface3); border-radius:2px; overflow:hidden; }
 .comp-bar-fill { height:100%; border-radius:2px; }
 .you-badge { font-size:10px; background:rgba(200,240,74,.15); color:var(--accent); padding:2px 7px; border-radius:10px; margin-left:6px; }
 
@@ -1276,10 +1278,6 @@ function jumpToCalDate(dateStr){ const d=new Date(dateStr); calYear=d.getFullYea
 function addEventLegacy(){ const name=prompt('Nafn:','Nýr sérdagur'); if(!name)return; const dates=prompt('Dagsetningar:','1. mán'); const price=parseInt(prompt('Verð:','40000'))||40000; events.push({name,dates,price,color:'#c8f04a'}); renderCalendar(); save(); }
 function delEventLegacy(i){ events.splice(i,1); renderCalendar(); save(); }
 function editEventLegacy(i){ const e=events[i]; const price=parseInt(prompt(`Verð fyrir ${e.name}:`,e.price))||e.price; events[i].price=price; renderCalendar(); save(); }
-function addEvent(){ addEventLegacy(); }
-function delEvent(i){ delEventLegacy(i); }
-function editEvent(i){ editEventLegacy(i); }
-
 
 // ── Occ display ───────────────────────────────────────────────────────────
 function updOcc(el,outId){ G(outId).textContent=el.value+'%'; }
@@ -1567,8 +1565,8 @@ async function findHotelId(index) {
   const nameInput = isMain ? G('hotel-name') : G(`comp${index}-name`);
   const idInput = isMain ? G('hotel-id') : G(`comp${index}-id`);
   
-  const name = nameInput.value;
-  const apiKey = G('api-key').value;
+  const name = nameInput.value.trim();
+  const apiKey = G('api-key').value.trim();
   
   if(!name || !apiKey) { 
     alert("Vinsamlegast settu bæði inn nafn og RapidAPI lykil!"); 
@@ -1578,7 +1576,6 @@ async function findHotelId(index) {
   idInput.value = "Leita...";
   
   try {
-     // Notar booking API. Locale=en-gb works better for global API searches
      const url = `https://booking-com.p.rapidapi.com/v1/hotels/locations?name=${encodeURIComponent(name)}&locale=en-gb`;
      const options = {
        method: 'GET',
@@ -1589,14 +1586,20 @@ async function findHotelId(index) {
      };
      
      const res = await fetch(url, options);
-     if (!res.ok) throw new Error("API skilaði villu: " + res.status);
+     if (!res.ok) throw new Error("Villa frá API: " + res.status);
      const data = await res.json();
      
-     // Finnum fyrstu niðurstöðuna sem er 'hotel'
-     const hotel = data.find(d => d.dest_type === 'hotel' || d.dest_id);
+     let arr = [];
+     if (Array.isArray(data)) arr = data;
+     else if (data && Array.isArray(data.data)) arr = data.data;
+     else if (data && Array.isArray(data.results)) arr = data.results;
+     else if (data && Array.isArray(data.locations)) arr = data.locations;
      
-     if (hotel && hotel.dest_id) {
-        idInput.value = hotel.dest_id;
+     const hotel = arr.find(d => d.dest_type === 'hotel' || d.type === 'hotel' || d.dest_id) || arr[0];
+     const foundId = hotel?.dest_id || hotel?.hotel_id || hotel?.id;
+     
+     if (foundId) {
+        idInput.value = foundId;
         save();
      } else {
         idInput.value = "Fannst ekki";
@@ -2344,6 +2347,9 @@ function gatherAllSettings(){
     horizon:G('ap-horizon')?.value||60,pricetype:G('ap-pricetype')?.value||'ota',
     roomid:G('ap-roomid')?.value||''};
   const comps=[1,2,3,4,5].map(i=>({ name: sval(`comp${i}-name`), id: sval(`comp${i}-id`) }));
+  
+  const keys={ booking: G('api-key')?.value||'', gemini: G('gemini-key')?.value||'' };
+
   loadCalEvents();
   let pickupLog=[];
   try{pickupLog=JSON.parse(localStorage.getItem('pickup_log')||'[]');}catch(e){}
@@ -2351,7 +2357,7 @@ function gatherAllSettings(){
   return {
     version:'1.0',
     exported:new Date().toISOString(),
-    hotel, baseprices, rules, events, seg, ap, comps,
+    hotel, baseprices, rules, events, seg, ap, comps, keys,
     calDayEvents, pickupLog
   };
 }
@@ -2405,9 +2411,13 @@ window.onload = function() {
       }
       if(data.comps){
         data.comps.forEach((c,i)=>{
-          if(G(`comp${i+1}-name`)) G(`comp${i+1}-name`).value = c.name;
-          if(G(`comp${i+1}-id`)) G(`comp${i+1}-id`).value = c.id;
+          if(G(`comp${i+1}-name`) && c.name) G(`comp${i+1}-name`).value = c.name;
+          if(G(`comp${i+1}-id`) && c.id) G(`comp${i+1}-id`).value = c.id;
         });
+      }
+      if(data.keys){
+        if(G('api-key') && data.keys.booking) G('api-key').value = data.keys.booking;
+        if(G('gemini-key') && data.keys.gemini) G('gemini-key').value = data.keys.gemini;
       }
       if(data.pickupLog&&Array.isArray(data.pickupLog)){
         try{localStorage.setItem('pickup_log',JSON.stringify(data.pickupLog));}catch(e){}
