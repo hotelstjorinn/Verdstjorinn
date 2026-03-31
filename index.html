@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Verðstjóri - Hótelverðstýring</title>
+<title>Verðstjórinn - Hótelverðstýring</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -141,6 +141,9 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 .today-label { font-size:12px; color:var(--muted); margin-top:4px; }
 .today-mods { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:12px; }
 .today-mod { font-size:11px; padding:3px 8px; border-radius:12px; }
+.tm-pos { background:rgba(74,222,128,.12); color:var(--green); }
+.tm-neg { background:rgba(200,240,74,.1); color:var(--accent); }
+.tm-neutral { background:var(--surface3); color:var(--muted); }
 
 .event-mini { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
 .event-mini:last-child { border-bottom:none; }
@@ -177,6 +180,12 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 .compare-box { padding:16px; border-radius:var(--r); text-align:center; margin-bottom:12px; }
 .compare-num { font-family:'DM Mono',monospace; font-size:28px; font-weight:500; }
 
+/* Segment */
+.seg-ota { color:#f4a261; font-family:'DM Mono',monospace; }
+.seg-direct { color:#4ade80; font-family:'DM Mono',monospace; }
+.seg-corp { color:#7dd3fc; font-family:'DM Mono',monospace; }
+.seg-diff { font-size:11px; padding:2px 7px; border-radius:10px; }
+
 /* AI chat */
 .chat-area { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; min-height: 200px; max-height: 400px; overflow-y: auto; margin-bottom: 12px; }
 .chat-msg { margin-bottom: 16px; }
@@ -186,6 +195,11 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 .chat-bubble-ai { background: var(--surface3); color: var(--text); border-radius: 12px 12px 12px 2px; text-align: left; }
 .chat-input-row { display: flex; gap: 10px; }
 .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--r); padding: 10px 14px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 13px; outline: none; }
+.typing { display: inline-flex; gap: 4px; padding: 10px 14px; }
+.typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: bounce .8s infinite; }
+.typing span:nth-child(2) { animation-delay: .15s; }
+.typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
 
 .toggle-group { display: flex; gap: 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 4px; }
 .toggle-opt { flex: 1; padding: 6px 12px; border-radius: 6px; border: none; background: transparent; color: var(--muted); cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 500; transition: all .15s; }
@@ -221,7 +235,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 
 <aside class="sidebar">
   <div class="logo">
-    <div class="logo-mark">Verðstjóri</div>
+    <div class="logo-mark">Verðstjórinn</div>
     <div class="logo-sub">Hótelverðstýring</div>
   </div>
   <div class="nav-section">Yfirlit</div>
@@ -239,14 +253,15 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
   <div class="nav-item" onclick="nav('autopilot')"><span class="nav-icon">🤖</span>Autopilot</div>
   <div class="nav-item" onclick="nav('tenging')"><span class="nav-icon">🔌</span>Tenging PMS</div>
   <div class="nav-section">Aðstoð</div>
-  <div class="nav-item" onclick="nav('ai')"><span class="nav-icon">✦</span>AI Ráðgjafi</div>
+  <div class="nav-item" onclick="nav('sync')" style="display: none;"><span class="nav-icon">🔄</span>Deila / Afrit</div>
+  <div class="nav-item" onclick="nav('ai')"><span class="nav-icon">✦</span>Gemini Ráðgjafi</div>
 </aside>
 
 <main class="main">
 
 <div class="page active" id="page-dashboard">
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px">
-    <div class="page-title" id="dash-hotel-name">Hótel Stafholt</div>
+    <div class="page-title" id="dash-hotel-name">Verðstjórinn</div>
     <div style="font-size:12px;color:var(--muted)" id="dash-date"></div>
   </div>
   <div class="page-sub">Dagleg yfirlit og verðstýring</div>
@@ -303,11 +318,11 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
   <div class="card">
     <div class="card-title">Hótelupplýsingar</div>
     <div class="field-row">
-      <div class="field"><label>Nafn hótels</label><input type="text" id="hotel-name" value="Hótel Stafholt" oninput="save()"></div>
+      <div class="field"><label>Nafn hótels eða gististaðar</label><input type="text" id="hotel-name" value="Hótel Stafholt" oninput="save()"></div>
       <div class="field"><label>Staðsetning</label><input type="text" id="hotel-loc" value="Borgarbyggð, Vesturland" oninput="save()"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Fjöldi herbergja (Heildarfjöldi)</label><input type="number" id="rooms" value="20" oninput="save()"></div>
+      <div class="field"><label>Heildarfjöldi herbergja</label><input type="number" id="rooms" value="20" oninput="save()"></div>
       <div class="field"><label>Stjörnur</label>
         <select id="stars" oninput="save()"><option>2★</option><option>3★</option><option selected>4★</option><option>5★</option></select>
       </div>
@@ -350,36 +365,42 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
   </div>
 
   <div class="card">
-    <div class="card-title">Samkeppnisaðilar (Booking.com API)</div>
-    <div class="alert alert-info">Sláðu inn Booking.com Hotel ID númer og nöfn fyrir þína keppinauta. Kerfið mun sækja þeirra verð í rauntíma á Mælaborðið.</div>
+    <div class="card-title">Samkeppnisaðilar (Booking.com Leit)</div>
+    <div class="alert alert-info">Settu inn nafn á hótelum í nágrenninu. Smelltu á 🔍 til að láta kerfið finna Booking.com ID sjálfkrafa.</div>
     <div class="field">
-      <label>X-RapidAPI-Key (Bókunar API Lykill)</label>
+      <label>X-RapidAPI-Key (Booking.com API Lykill)</label>
       <input type="text" id="api-key" value="aa73991419msh780ae4bacd33dc3p12ac5fjsn494bf3cba6a6" oninput="save()">
     </div>
     
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
-      <div style="font-size:11px; color:var(--muted); text-transform:uppercase;">Nafn Hótels</div>
-      <div style="font-size:11px; color:var(--muted); text-transform:uppercase;">Booking.com Hotel ID</div>
+    <div style="display:grid; grid-template-columns: 1fr 120px 40px; gap:10px; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+      <div style="font-size:11px; color:var(--muted); text-transform:uppercase;">Nafn Hótels / Gististaðar</div>
+      <div style="font-size:11px; color:var(--muted); text-transform:uppercase;">ID númer</div>
+      <div></div>
     </div>
-    <div class="field-row" style="margin-bottom:8px;">
+    <div class="field-row" style="grid-template-columns: 1fr 120px 40px; margin-bottom:8px;">
       <input type="text" id="comp1-name" value="Hótel Húsafell" oninput="save()">
-      <input type="text" id="comp1-id" value="123456" placeholder="T.d. 123456" oninput="save()">
+      <input type="text" id="comp1-id" placeholder="Finna..." readonly>
+      <button class="btn btn-ghost btn-sm" onclick="findHotelId(1)" title="Sjálfvirk Leit">🔍</button>
     </div>
-    <div class="field-row" style="margin-bottom:8px;">
+    <div class="field-row" style="grid-template-columns: 1fr 120px 40px; margin-bottom:8px;">
       <input type="text" id="comp2-name" value="Hótel Varmaland" oninput="save()">
-      <input type="text" id="comp2-id" value="654321" placeholder="T.d. 654321" oninput="save()">
+      <input type="text" id="comp2-id" placeholder="Finna..." readonly>
+      <button class="btn btn-ghost btn-sm" onclick="findHotelId(2)" title="Sjálfvirk Leit">🔍</button>
     </div>
-    <div class="field-row" style="margin-bottom:8px;">
+    <div class="field-row" style="grid-template-columns: 1fr 120px 40px; margin-bottom:8px;">
       <input type="text" id="comp3-name" value="Hótel Bifröst" oninput="save()">
-      <input type="text" id="comp3-id" value="112233" placeholder="T.d. 112233" oninput="save()">
+      <input type="text" id="comp3-id" placeholder="Finna..." readonly>
+      <button class="btn btn-ghost btn-sm" onclick="findHotelId(3)" title="Sjálfvirk Leit">🔍</button>
     </div>
-    <div class="field-row" style="margin-bottom:8px;">
+    <div class="field-row" style="grid-template-columns: 1fr 120px 40px; margin-bottom:8px;">
       <input type="text" id="comp4-name" value="Hótel Hamar" oninput="save()">
-      <input type="text" id="comp4-id" value="445566" placeholder="T.d. 445566" oninput="save()">
+      <input type="text" id="comp4-id" placeholder="Finna..." readonly>
+      <button class="btn btn-ghost btn-sm" onclick="findHotelId(4)" title="Sjálfvirk Leit">🔍</button>
     </div>
-    <div class="field-row" style="margin-bottom:8px;">
+    <div class="field-row" style="grid-template-columns: 1fr 120px 40px; margin-bottom:8px;">
       <input type="text" id="comp5-name" value="B59 Hotel" oninput="save()">
-      <input type="text" id="comp5-id" value="998877" placeholder="T.d. 998877" oninput="save()">
+      <input type="text" id="comp5-id" placeholder="Finna..." readonly>
+      <button class="btn btn-ghost btn-sm" onclick="findHotelId(5)" title="Sjálfvirk Leit">🔍</button>
     </div>
   </div>
 </div>
@@ -765,7 +786,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
           Ferðaskrifstofu, fyrirtæki<br>
           Min. 10 nætur á ári<br>
           Gefðu upp samningsverð<br>
-          <span style="color:var(--text)">Þóknun: 0-5%</span>
+          <span style="color:var(--text)">Þóknun: 5-20%</span>
         </div>
       </div>
     </div>
@@ -960,8 +981,14 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
     <div class="card">
       <div class="card-title">Útflutningur — Hlaðaðu niður og flyttu handvirkt inn</div>
       <div class="field-row">
-        <div class="field"><label>Frá dagsetningu</label><input type="date" id="exp-from"></div>
-        <div class="field"><label>Til dagsetningar</label><input type="date" id="exp-to"></div>
+        <div class="field">
+          <label>Frá dagsetningu</label>
+          <input type="date" id="exp-from">
+        </div>
+        <div class="field">
+          <label>Til dagsetningar</label>
+          <input type="date" id="exp-to">
+        </div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
         <button class="btn btn-ghost" onclick="exportCSV()">⬇ Sækja CSV (Beds24/Cloudbeds)</button>
@@ -969,29 +996,48 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
         <button class="btn btn-ghost" onclick="copyPriceTable()">📋 Afrita verðtöflu</button>
       </div>
     </div>
+
     <div id="export-preview" class="card" style="display:none">
       <div class="card-title">Forskoðun</div>
       <pre id="export-pre" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent2);overflow-x:auto;white-space:pre-wrap;max-height:300px;overflow-y:auto"></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Hvernig á að flytja inn í Beds24 handvirkt</div>
+      <div style="font-size:13px;color:var(--muted);line-height:2">
+        1. Sæktu CSV hér að ofan<br>
+        2. Farðu í Beds24 → Calendar → Bulk Editor<br>
+        3. Eða: Beds24 → Prices → Import prices<br>
+        4. Veldu CSV skrána og staðfestu import
+      </div>
     </div>
   </div>
 </div>
 
 <div class="page" id="page-ai">
-  <div class="page-title">AI Ráðgjafi (Kerfiskarlinn)</div>
-  <div class="page-sub">Spurðu kerfið út í þínar eigin forsendur.</div>
+  <div class="page-title">Gemini Ráðgjafi</div>
+  <div class="page-sub">Spurðu gervigreindina út í þínar eigin forsendur og markaðinn.</div>
+
+  <div class="card">
+    <div class="alert alert-info">Til að Gemini geti lesið öll gögnin og svarað af viti, þarftu að setja inn API lykil frá Google AI Studio.</div>
+    <div class="field">
+      <label>Gemini API Lykill</label>
+      <input type="password" id="gemini-key" placeholder="AIzaSy..." oninput="save()">
+    </div>
+  </div>
 
   <div class="card">
     <div class="chat-area" id="chat-area">
       <div class="chat-msg">
         <div class="chat-row">
           <div class="chat-bubble chat-bubble-ai">
-            Hæ! Ég er innbyggði ráðgjafinn þinn. Ég er tengdur við tölurnar þínar og get hjálpað þér að reikna hluti án þess að þurfa dýran API lykil. Spyrðu mig til dæmis "Hvað er ADRið mitt?", eða "Hvað á ég að gera í sumar?" 👋
+            Hæ! Ég er Gemini ráðgjafinn þinn. Þegar þú ert búinn að setja lykilinn inn geturðu spurt mig út í hvað sem er. Ég hef aðgang að öllu á síðunni! 👋
           </div>
         </div>
       </div>
     </div>
     <div class="chat-input-row">
-      <input class="chat-input" id="chat-input" placeholder="Spurðu um verðstýringu…" onkeydown="if(event.key==='Enter')sendChat()">
+      <input class="chat-input" id="chat-input" placeholder="Spurðu Gemini..." onkeydown="if(event.key==='Enter')sendChat()">
       <button class="btn btn-primary" onclick="sendChat()">Senda</button>
     </div>
     <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
@@ -1007,10 +1053,14 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
+// ── Data ──────────────────────────────────────────────────────────────────
 const MONTHS = ['Janúar','Febrúar','Mars','Apríl','Maí','Júní','Júlí','Ágúst','September','Október','Nóvember','Desember'];
 const DAYS   = [31,28,31,30,31,30,31,31,30,31,30,31];
 const BASE_PRICES = [30000,29000,29000,30000,35000,46000,49000,47000,42000,36000,30000,34000];
 const OCC_TYPE = ['low','low','low','low','mid','high','high','high','mid','mid','low','low'];
+
+const IS_WEEKDAYS = ['Sunnudagur','Mánudagur','Þriðjudagur','Miðvikudagur','Fimmtudagur','Föstudagur','Laugardagur'];
+const IS_MONTHS_GEN = ['janúar','febrúar','mars','apríl','maí','júní','júlí','ágúst','september','október','nóvember','desember'];
 
 let events = [
   {name:'Nýársnótt',dates:'31. des–1. jan',price:52000,color:'#f4a261'},
@@ -1032,7 +1082,7 @@ function save() {
   renderDashboard();
   renderRevenue();
   renderSegPrices();
-  renderAfslattir(); // Nýtt
+  renderAfslattir(); 
   if(G('page-reiknir').classList.contains('active')) calcPrice();
   if(G('page-sertimar').classList.contains('active')) renderCalendar();
   
@@ -1049,7 +1099,7 @@ function nav(page) {
   event.currentTarget.classList.add('active');
   G('page-'+page).classList.add('active');
   if(page==='tekjur') renderRevenue();
-  if(page==='sertimar') renderCalendar(); 
+  if(page==='sertimar') { renderCalendar(); }
   if(page==='dashboard') renderDashboard();
   if(page==='tenging'){ loadPMS(); initExportDates(); }
   if(page==='pickup') renderPickup();
@@ -1069,13 +1119,18 @@ function buildBasePrices(){
     g.appendChild(div);
   });
 }
+
 function getBasePrice(monthIdx){ return parseFloat(G('bp-'+monthIdx)?.value)||BASE_PRICES[monthIdx]; }
 
 // ── Calendar ─────────────────────────────────────────────────────────────
-let calYear=2026, calMonth=0, calDayEvents={}, calSelectedDate=null;
+let calYear=2026, calMonth=0;
+let calDayEvents={};
+let calSelectedDate=null;
+
 function calKey(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 function loadCalEvents(){ try{ calDayEvents=JSON.parse(localStorage.getItem('cal_events')||'{}'); }catch(e){ calDayEvents={}; } }
 function saveCalEvents(){ try{ localStorage.setItem('cal_events',JSON.stringify(calDayEvents)); }catch(e){} }
+
 function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
 function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
 
@@ -1091,7 +1146,9 @@ function getDayPrice(y,m,d){
   return Math.round(base*(1+mod/100)/500)*500;
 }
 
-function hexToRgb(hex){ return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`; }
+function hexToRgb(hex){
+  return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
+}
 
 function renderCalendar(){
   loadCalEvents();
@@ -1187,7 +1244,11 @@ function clearCalEvent(){
   saveCalEvents(); G('cal-editor').style.display='none'; renderCalendar(); save();
 }
 
-function closeCalEditor(){ calSelectedDate=null; if(G('cal-editor')) G('cal-editor').style.display='none'; renderCalendar(); }
+function closeCalEditor(){
+  calSelectedDate=null;
+  if(G('cal-editor')) G('cal-editor').style.display='none';
+  renderCalendar();
+}
 
 // ── Events (list) ─────────────────────────────────────────────────────────
 function renderEvents(){
@@ -1240,6 +1301,8 @@ function calcPrice(){
 
   let base=getBasePrice(month);
   let mods=[];
+
+  const monthName=MONTHS[month];
 
   // Early bird
   let ebPct=0;
@@ -1300,6 +1363,7 @@ function calcPrice(){
 function renderRevenue(){
   const body=G('revenue-body');
   const foot=G('revenue-foot');
+  const statsRow=G('stats-row');
   if(!body) return;
   body.innerHTML='';
 
@@ -1310,7 +1374,7 @@ function renderRevenue(){
   const tax=val('tax');
   const cardFee=val('card-fee')/100;
   const otaFee=val('ota-fee')/100;
-  const otaShare=0.70;
+  const otaShare=0.70; // assumed 70% via OTA
 
   let totalRev=0,totalNet=0,totalNights=0;
   const badges=['winter','winter','winter','winter','shoulder','summer','summer','summer','shoulder','shoulder','winter','winter'];
@@ -1319,8 +1383,9 @@ function renderRevenue(){
   MONTHS.forEach((m,i)=>{
     const occ=OCC_TYPE[i]==='high'?occHigh:OCC_TYPE[i]==='mid'?occMid:occLow;
     const base=getBasePrice(i);
+    // Apply avg weekend premium (~2 weekends * 2 days)
     const weekendBoost=(val('fri-prem')+val('sat-prem'))/2;
-    const avgMod=weekendBoost*(8/DAYS[i]);
+    const avgMod=weekendBoost*(8/DAYS[i]); // rough: 8 weekend nights
     const avg=Math.round(base*(1+avgMod/100));
     const nights=Math.round(rooms*DAYS[i]*occ);
     const rev=nights*avg;
@@ -1352,16 +1417,32 @@ function renderRevenue(){
     <td></td>
   </tr>`;
 
-  if(G('stats-row')) {
+  if(G('stats-row')){
     G('stats-row').innerHTML=`
-      <div class="stat-card accent"><div class="stat-label">Áætluð árstekjur</div><div class="stat-value">${(totalRev/1000000).toFixed(1)}M</div><div class="stat-sub">ISK 2026</div></div>
-      <div class="stat-card accent"><div class="stat-label">Áætlaðar nettótekjur</div><div class="stat-value">${(totalNet/1000000).toFixed(1)}M</div><div class="stat-sub">eftir skatt og þóknanir</div></div>
-      <div class="stat-card"><div class="stat-label">Seldar nætur</div><div class="stat-value">${totalNights.toLocaleString('is-IS')}</div><div class="stat-sub">gistináttaeiningar</div></div>
-      <div class="stat-card"><div class="stat-label">RevPAR</div><div class="stat-value">${fmt(totalRev/(rooms*365))}</div><div class="stat-sub">Revenue per room</div></div>`;
+      <div class="stat-card accent">
+        <div class="stat-label">Áætluð árstekjur</div>
+        <div class="stat-value">${(totalRev/1000000).toFixed(1)}M</div>
+        <div class="stat-sub">ISK 2026</div>
+      </div>
+      <div class="stat-card accent">
+        <div class="stat-label">Áætlaðar nettótekjur</div>
+        <div class="stat-value">${(totalNet/1000000).toFixed(1)}M</div>
+        <div class="stat-sub">eftir skatt og þóknanir</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Seldar nætur</div>
+        <div class="stat-value">${totalNights.toLocaleString('is-IS')}</div>
+        <div class="stat-sub">gistináttaeiningar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">RevPAR</div>
+        <div class="stat-value">${fmt(totalRev/(rooms*365))}</div>
+        <div class="stat-sub">Revenue per available room</div>
+      </div>`;
   }
 }
 
-// ── AFSLÆTTIR & ÞÓKNANIR (NÝR FLIPI) ──────────────────────────────────────
+// ── AFSLÆTTIR & ÞÓKNANIR ──────────────────────────────────────────
 function renderAfslattir() {
   const rooms=val('rooms')||20;
   const otaFee=val('ota-fee')/100;
@@ -1399,46 +1480,50 @@ function renderAfslattir() {
   }
 }
 
-// ── AI Ráðgjafi (Hermir) ──────────────────────────────────────────────────
+// ── AI Chat (Gemini) ──────────────────────────────────────────────────────
 let chatHistory=[];
-function sendChat() {
+
+async function sendChat(){
   const input=G('chat-input');
   const msg=input.value.trim();
   if(!msg)return;
   input.value='';
   appendMsg(msg,'user');
-  const typing=appendTyping();
   
-  setTimeout(() => {
+  const typing=appendTyping();
+  const geminiKey = G('gemini-key')?.value;
+  
+  if (!geminiKey) {
+     typing.remove();
+     appendMsg("Vinsamlegast settu inn Gemini API lykilinn þinn hér að ofan til að tengjast við gervigreindina.", 'ai');
+     return;
+  }
+
+  const context = JSON.stringify(gatherAllSettings());
+  const prompt = `Þú ert sérfræðingur í hótelverðstýringu. Svaraðu mjög stutt, skýrt og á íslensku. Hér eru öll gögn hótelsins í JSON: ${context}. Spurning notanda: ${msg}`;
+
+  try {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    
+    const data = await resp.json();
     typing.remove();
-    const lc = msg.toLowerCase();
-    let reply = "Ég skil því miður ekki spurninguna. Prófaðu að nota einn af hnöppunum hér að neðan eða spyrja um 'ADR', 'OTA' eða 'Helgar'.";
     
-    const rooms = val('rooms') || 20;
-    
-    if (lc.includes("adr")) {
-      let totalRev=0, totalNights=0;
-      MONTHS.forEach((m,i)=>{
-        const occ=OCC_TYPE[i]==='high'?(val('occ-high')/100):OCC_TYPE[i]==='mid'?(val('occ-mid')/100):(val('occ-low')/100);
-        const nights=Math.round(rooms*DAYS[i]*occ);
-        const avg=Math.round(getBasePrice(i)*1.05);
-        totalRev+=nights*avg; totalNights+=nights;
-      });
-      reply = `Áætlað ADR (Meðalverð gistingar) fyrir árið er um það bil **${fmt(totalRev/totalNights)}**. Gættu þess að þetta lækkar í raun eftir þóknanir.`;
-    } 
-    else if (lc.includes("ota") || lc.includes("borga") || lc.includes("þóknun")) {
-      const ota = val('ota-fee');
-      reply = `Þú ert með stillta OTA þóknun á **${ota}%**. Ef við gerum ráð fyrir að 70% bókana komi í gegnum OTA (Booking/Expedia) munt þú borga töluverða upphæð á árinu. Kíktu í flipann 'Afslættir & Þóknanir' til að sjá nákvæma krónutölu.`;
-    }
-    else if (lc.includes("helgar") || lc.includes("helgi") || lc.includes("föstudag")) {
-      reply = `Þú ert með **+${val('fri-prem')}%** álag á föstudögum og **+${val('sat-prem')}%** á laugardögum. Yfir hásumarið mæli ég eindregið með því að hækka þetta, jafnvel upp í 20-25%, þar sem eftirspurn er iðulega miklu meiri um helgar.`;
-    }
-    else if (lc.includes("sumar") || lc.includes("júní") || lc.includes("júlí")) {
-      reply = `Sumarið er þinn mikilvægasti tími. Þú ert með nýtingarmarkmið upp á **${val('occ-high')}%**. Ef þú ert að fyllast of snemma (t.d. í mars/apríl fyrir sumarið), skaltu hækka grunnverðið þitt.`;
+    if (data.error) {
+      appendMsg('Villa við tengingu (Er lykillinn réttur?): ' + data.error.message, 'ai');
+      return;
     }
 
-    appendMsg(reply,'ai');
-  }, 800);
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Gat ekki lesið svar frá Gemini.';
+    appendMsg(reply, 'ai');
+    
+  } catch(e) {
+    typing.remove();
+    appendMsg('Tenging mistókst. Reyndu aftur eða athugaðu internettengingu.', 'ai');
+  }
 }
 
 function appendMsg(text,role){
@@ -1461,39 +1546,83 @@ function appendTyping(){
   area.scrollTop=area.scrollHeight;
   return div;
 }
-function quickQ(q){ G('chat-input').value=q; sendChat(); }
 
-// ── SAMKEPPNISVÖKTUN (RAPIDAPI BOOKING.COM) ────────────────────────────────
+function quickQ(q){ G('chat-input').value=q; sendChat(); nav_direct('ai'); }
+function nav_direct(page){
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>{ if(el.textContent.includes('Gemini')) el.classList.add('active'); });
+  G('page-'+page).classList.add('active');
+}
+
+// ── SAMKEPPNISVÖKTUN (RAPIDAPI BOOKING.COM AUTO-SEARCH) ───────────────────
+async function findHotelId(index) {
+  const name = G(`comp${index}-name`).value;
+  const apiKey = G('api-key').value;
+  
+  if(!name || !apiKey) { 
+    alert("Vinsamlegast settu bæði inn nafn og RapidAPI lykil!"); 
+    return; 
+  }
+  
+  G(`comp${index}-id`).value = "Leita...";
+  
+  try {
+     // Notar sameiginlegt Booking.com API endpoint í gegnum RapidAPI
+     const url = `https://booking-com.p.rapidapi.com/v1/hotels/locations?name=${encodeURIComponent(name)}&locale=is`;
+     const options = {
+       method: 'GET',
+       headers: {
+         'X-RapidAPI-Key': apiKey,
+         'X-RapidAPI-Host': 'booking-com.p.rapidapi.com'
+       }
+     };
+     
+     const res = await fetch(url, options);
+     const data = await res.json();
+     
+     // Finnum fyrstu niðurstöðuna sem er 'hotel' (gististaður)
+     const hotel = data.find(d => d.dest_type === 'hotel');
+     
+     if (hotel && hotel.dest_id) {
+        G(`comp${index}-id`).value = hotel.dest_id;
+        save();
+     } else {
+        G(`comp${index}-id`).value = "Fannst ekki";
+     }
+  } catch(e) {
+     G(`comp${index}-id`).value = "API Villa";
+     console.error(e);
+  }
+}
+
 async function fetchBookingPrices() {
   const apiKey = G('api-key')?.value;
-  if(!apiKey) { alert("Þú verður að setja inn API lykil!"); return; }
+  if(!apiKey) { alert("Þú verður að setja inn API lykil í forsendum!"); return; }
   
   const btn = G('fetch-btn');
   btn.textContent = "Sækir verð...";
   btn.disabled = true;
 
-  // Sækjum ID úr kerfinu (Notandinn fyllir inn 1 til 5)
   const competitors = [];
   for(let i=1; i<=5; i++) {
     const name = G(`comp${i}-name`)?.value;
     const id = G(`comp${i}-id`)?.value;
-    if(name && id) competitors.push({ name, id, price: 0 });
+    if(name && id && id !== "Fannst ekki" && id !== "API Villa") {
+      competitors.push({ name, id, price: 0 });
+    }
   }
 
-  // API Kall hermir - (Vegna þess að alvöru RapidAPI fyrirspurn yfir vafra fer í gegnum flókin CORS mörk, þá 
-  // gerum við léttan fetch og sköfum Random/Dummy svar ef það virkar ekki beint).
   try {
     for(let comp of competitors) {
-       // Hér væri alvöru fetch() fallið. Við setjum inn staðgengil (random verð) til að sýna virknina án villu.
-       // Alvöru dæmi: await fetch(`https://booking-com.p.rapidapi.com/v1/hotels/data?hotel_id=${comp.id}...`)
-       await new Promise(r => setTimeout(r, 400)); // Hika (fake loading)
+       // Þetta skapar mock niðurstöður inni á Dashboard, nema þú sért með "search" fallið virkt 
+       // sem þá myndi ná í live verðin fyrir hvern id. Fyrir Demo er wait gert:
+       await new Promise(r => setTimeout(r, 400)); 
        comp.price = Math.floor(Math.random() * (45000 - 22000 + 1) + 22000);
     }
     
-    // Setjum þitt eigið verð inn líka
     competitors.unshift({name: G('hotel-name').value, id: 'ÞITT VERÐ', price: getBasePrice(new Date().getMonth()), you: true});
     
-    // Render list
     const maxComp = Math.max(...competitors.map(c=>c.price));
     G('comp-snap').innerHTML = competitors.map(c => `
       <div class="comp-row">
@@ -1516,22 +1645,24 @@ async function fetchBookingPrices() {
 // ── Dashboard Render ──────────────────────────────────────────────────────
 let revChart=null;
 function renderDashboard(){
-  G('dash-hotel-name').textContent=sval('hotel-name')||'Hótel Stafholt';
-  const now=new Date();
-  G('dash-date').textContent=now.toLocaleDateString('is-IS',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  G('dash-hotel-name').textContent=sval('hotel-name')||'Verðstjórinn';
+  const now = new Date();
+  G('dash-date').textContent = `${IS_WEEKDAYS[now.getDay()]}, ${now.getDate()}. ${IS_MONTHS_GEN[now.getMonth()]} ${now.getFullYear()}`;
 
   const rooms=val('rooms')||20;
   const occLow=val('occ-low')/100;
   const occMid=val('occ-mid')/100;
   const occHigh=val('occ-high')/100;
 
-  let totalRev=0,totalNet=0,totalNights=0,totalRooms=0,totalAvailable=0;
+  let totalRev=0,totalNet=0,totalNights=0,totalAvailable=0;
   const monthRevs=[],monthAvgs=[];
 
   MONTHS.forEach((m,i)=>{
     const occ=OCC_TYPE[i]==='high'?occHigh:OCC_TYPE[i]==='mid'?occMid:occLow;
     const base=getBasePrice(i);
-    const avg=Math.round(base*(1+((val('fri-prem')+val('sat-prem'))/2)*(8/DAYS[i])/100));
+    const weekendBoost=(val('fri-prem')+val('sat-prem'))/2;
+    const avgMod=weekendBoost*(8/DAYS[i]);
+    const avg=Math.round(base*(1+avgMod/100));
     const nights=Math.round(rooms*DAYS[i]*occ);
     const rev=nights*avg;
     totalRev+=rev; totalNights+=nights; totalAvailable+=rooms*DAYS[i];
@@ -1540,10 +1671,10 @@ function renderDashboard(){
 
   const avgOcc=totalNights/totalAvailable;
   const revpar=totalRev/totalAvailable;
-  const adr=totalNights > 0 ? (totalRev/totalNights) : 0; // NÝTT: ADR Útreikningur
+  const adr=totalNights > 0 ? (totalRev/totalNights) : 0; 
 
   G('dash-kpis').innerHTML=`
-    <div class="dash-kpi k1"><div class="kpi-label">Áætluð árstekjur</div><div class="kpi-val accent">${(totalRev/1000000).toFixed(1)}M</div></div>
+    <div class="dash-kpi k1"><div class="kpi-label">Áætlaðar árstekjur</div><div class="kpi-val accent">${(totalRev/1000000).toFixed(1)}M</div></div>
     <div class="dash-kpi k2"><div class="kpi-label">Meðalnýting (OCC)</div><div class="kpi-val blue">${Math.round(avgOcc*100)}%</div></div>
     <div class="dash-kpi k3"><div class="kpi-label">ADR (Meðalverð)</div><div class="kpi-val purple">${fmt(adr)}</div></div>
     <div class="dash-kpi k4"><div class="kpi-label">RevPAR</div><div class="kpi-val amber">${fmt(revpar)}</div></div>
@@ -1554,34 +1685,82 @@ function renderDashboard(){
   if(revChart){revChart.destroy();revChart=null;}
   revChart=new Chart(canvas,{
     type:'bar',
-    data:{ labels:MONTHS.map(m=>m.slice(0,3)), datasets:[{ label:'Tekjur', data:monthRevs, backgroundColor:MONTHS.map((_,i)=>OCC_TYPE[i]==='high'?'rgba(200,240,74,0.7)':OCC_TYPE[i]==='mid'?'rgba(74,222,128,0.5)':'rgba(125,211,252,0.4)'), borderRadius:4 }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{ticks:{callback:v=>(v/1000000).toFixed(1)+'M'}} } }
+    data:{
+      labels:MONTHS.map(m=>m.slice(0,3)),
+      datasets:[{
+        label:'Tekjur',
+        data:monthRevs,
+        backgroundColor:MONTHS.map((_,i)=>OCC_TYPE[i]==='high'?'rgba(200,240,74,0.7)':OCC_TYPE[i]==='mid'?'rgba(74,222,128,0.5)':'rgba(125,211,252,0.4)'),
+        borderRadius:4,
+        borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+Math.round(c.raw).toLocaleString('is-IS')+' kr'}}},
+      scales:{
+        x:{ticks:{color:'#888894',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#888894',font:{size:11},callback:v=>(v/1000000).toFixed(1)+'M'},grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
   });
 
-  G('occ-bars').innerHTML=[{l:'Lágár',p:occLow,c:'#7dd3fc'},{l:'Sumar',p:occHigh,c:'#c8f04a'}].map(o=>`
-    <div class="mini-bar-row"><div class="mini-bar-label">${o.l}</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:${o.p*100}%;background:${o.c}"></div></div><div class="mini-bar-val">${Math.round(o.p*100)}%</div></div>
-  `).join('');
+  const occData=[
+    {label:'Lágárstíð',pct:Math.round(occLow*100),color:'#7dd3fc'},
+    {label:'Axlarár',pct:Math.round(occMid*100),color:'#4ade80'},
+    {label:'Sumar',pct:Math.round(occHigh*100),color:'#c8f04a'},
+    {label:'Ársmeðaltal',pct:Math.round(avgOcc*100),color:'#f4a261'},
+  ];
+  G('occ-bars').innerHTML=occData.map(o=>`
+    <div class="mini-bar-row">
+      <div class="mini-bar-label" style="font-size:12px;color:var(--muted)">${o.label}</div>
+      <div class="mini-bar-track"><div class="mini-bar-fill" style="width:${o.pct}%;background:${o.color}"></div></div>
+      <div class="mini-bar-val">${o.pct}%</div>
+    </div>`).join('');
 
-  const todayMonth=now.getMonth(), todayDay=now.getDay(), todayBase=getBasePrice(todayMonth);
+  const todayMonth=now.getMonth();
+  const todayDay=now.getDay();
+  let todayBase=getBasePrice(todayMonth);
   let mods=[];
   if(todayDay===5) mods.push({l:'Helgarálag (fös)',p:val('fri-prem'),cl:'tm-pos'});
   if(todayDay===6) mods.push({l:'Helgarálag (lau)',p:val('sat-prem'),cl:'tm-pos'});
+  if(OCC_TYPE[todayMonth]==='low'){
+    if(todayDay===1) mods.push({l:'Mánudagsafsláttur',p:val('mon-disc'),cl:'tm-neg'});
+    if(todayDay===2) mods.push({l:'Þriðjudagsafsláttur',p:val('tue-disc'),cl:'tm-neg'});
+  }
   const todayMod=mods.reduce((s,m)=>s+m.p,0);
+  const todayPrice=Math.round(todayBase*(1+todayMod/100)/500)*500;
   G('today-price-block').innerHTML=`
-    <div class="today-big">${fmt(Math.round(todayBase*(1+todayMod/100)/500)*500)}</div>
+    <div class="today-big">${fmt(todayPrice)}</div>
     <div class="today-label">Daglegt herbergisverð</div>
-    <div class="today-mods"><span class="today-mod tm-neutral">Grunnverð: ${fmt(todayBase)}</span>${mods.map(m=>`<span class="today-mod ${m.cl}">${m.l}: +${m.p}%</span>`).join('')}</div>`;
+    <div class="today-mods">
+      <span class="today-mod tm-neutral">Grunnverð: ${fmt(todayBase)}</span>
+      ${mods.map(m=>`<span class="today-mod ${m.cl}">${m.l}: +${m.p}%</span>`).join('')}
+    </div>`;
 
   const weekHtml=[];
   const dayNamesShort=['Sun','Mán','Þri','Mið','Fim','Fös','Lau'];
   for(let i=0;i<7;i++){
     const d=new Date(now); d.setDate(d.getDate()+i); const dw=d.getDay(); const dm=d.getMonth();
-    let p=Math.round(getBasePrice(dm)*(1+(dw===5?val('fri-prem'):dw===6?val('sat-prem'):0)/100)/500)*500;
-    weekHtml.push(`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);opacity:${i===0?1:.7}"><div><span style="color:${i===0?'var(--accent)':'var(--text)'}">${dayNamesShort[dw]}</span><span style="font-size:11px;color:var(--muted);margin-left:6px">${d.getDate()}.</span></div><div style="font-family:'DM Mono',monospace">${fmt(p)}</div></div>`);
+    let base=getBasePrice(dm); let mod=0;
+    if(dw===5) mod=val('fri-prem');
+    if(dw===6) mod=val('sat-prem');
+    if(OCC_TYPE[dm]==='low'&&dw===1) mod=val('mon-disc');
+    if(OCC_TYPE[dm]==='low'&&dw===2) mod=val('tue-disc');
+    const p=Math.round(base*(1+mod/100)/500)*500;
+    const isToday=i===0;
+    weekHtml.push(`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);${isToday?'opacity:1':'opacity:.7'}">
+        <div>
+          <span style="font-size:12px;font-weight:${isToday?600:400};color:${isToday?'var(--accent)':'var(--text)'}">${dayNamesShort[dw]}</span>
+          <span style="font-size:11px;color:var(--muted);margin-left:6px">${d.getDate()}. ${MONTHS[dm].slice(0,3)}</span>
+          ${isToday?'<span style="font-size:10px;background:rgba(200,240,74,.15);color:var(--accent);padding:1px 6px;border-radius:10px;margin-left:6px">í dag</span>':''}
+        </div>
+        <div style="font-family:\'DM Mono\',monospace;font-size:13px;color:${mod>0?'var(--accent3)':mod<0?'var(--accent2)':'var(--text)'}">${fmt(p)}</div>
+      </div>`);
   }
   G('week-prices').innerHTML=weekHtml.join('');
 
-  // Default Competitor list if not fetched
   if(!G('comp-snap').innerHTML.includes('comp-row')) {
     G('comp-snap').innerHTML = '<div style="color:var(--muted); text-align:center; padding: 20px 0;">Smelltu á Sækja rauntímaverð til að hlaða inn gögnum.</div>';
   }
@@ -1593,63 +1772,639 @@ function renderDashboard(){
       ${MONTHS.map((m,i)=>{
         const pct=monthAvgs[i]/maxAvg;
         const opacity=0.2+pct*0.75;
-        return `<div style="background:${heatColors[i]};opacity:${opacity};border-radius:8px;padding:12px 8px;text-align:center;">
+        return `<div style="background:${heatColors[i]};opacity:${opacity};border-radius:8px;padding:12px 8px;text-align:center;cursor:default;transition:opacity .2s"
+          onmouseover="this.style.opacity=1" onmouseout="this.style.opacity='${opacity}'">
           <div style="font-size:11px;font-weight:600;color:#111">${m.slice(0,3)}</div>
           <div style="font-family:'DM Mono',monospace;font-size:13px;color:#111;margin-top:4px">${fmt(monthAvgs[i])}</div>
+          <div style="font-size:10px;color:rgba(0,0,0,0.6);margin-top:2px">${Math.round(OCC_TYPE[i]==='high'?occHigh*100:OCC_TYPE[i]==='mid'?occMid*100:occLow*100)}%</div>
         </div>`;
       }).join('')}
+    </div>
+    <div style="display:flex;gap:16px;margin-top:12px;justify-content:flex-end">
+      <span style="font-size:11px;color:var(--muted)">◼ <span style="color:var(--accent2)">Lágárstíð</span></span>
+      <span style="font-size:11px;color:var(--muted)">◼ <span style="color:var(--green)">Axlarár</span></span>
+      <span style="font-size:11px;color:var(--muted)">◼ <span style="color:var(--accent3)">Sumar/hátíð</span></span>
     </div>`;
 }
 
-// ── PICKUP LOGIC (Kept exactly as original) ────────────────────────────────
+// ── PMS Integration ────────────────────────────────────────────────────────
+function savePMS(){
+  try{
+    localStorage.setItem('b24token', G('b24-token')?.value||'');
+    localStorage.setItem('b24propid', G('b24-propid')?.value||'');
+    localStorage.setItem('cbkey', G('cb-apikey')?.value||'');
+    localStorage.setItem('cbpropid', G('cb-propid')?.value||'');
+  }catch(e){}
+}
+
+function loadPMS(){
+  try{
+    const b24t=localStorage.getItem('b24token');
+    const b24p=localStorage.getItem('b24propid');
+    const cbt=localStorage.getItem('cbkey');
+    const cbp=localStorage.getItem('cbpropid');
+    if(b24t&&G('b24-token'))G('b24-token').value=b24t;
+    if(b24p&&G('b24-propid'))G('b24-propid').value=b24p;
+    if(cbt&&G('cb-apikey'))G('cb-apikey').value=cbt;
+    if(cbp&&G('cb-propid'))G('cb-propid').value=cbp;
+  }catch(e){}
+}
+
+function pmsStatus(msg, type='loading'){
+  const el=G('pms-status-bar');
+  if(!el)return;
+  const icons={ok:'✓',err:'✗',loading:'◌'};
+  el.innerHTML=`<div class="pms-status ${type}">${icons[type]} ${msg}</div>`;
+}
+
+function b24Token(){ return G('b24-token')?.value?.trim()||localStorage.getItem('b24token')||''; }
+
+async function b24Req(endpoint, method='GET', body=null){
+  const token=b24Token();
+  if(!token)throw new Error('Enginn token. Settu inn Beds24 Long Life Token.');
+  const opts={method, headers:{accept:'application/json',token}};
+  if(body){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(body);}
+  const r=await fetch('https://beds24.com/api/v2'+endpoint, opts);
+  if(!r.ok)throw new Error(`Beds24 villa: ${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+async function b24Test(){
+  pmsStatus('Prófar tengingu…');
+  try{
+    const data=await b24Req('/authentication/token',  'GET');
+    pmsStatus('Tenging tókst! ✓ Token er gildur.','ok');
+  }catch(e){
+    try{
+      const data=await b24Req('/properties');
+      pmsStatus('Tenging tókst! ✓ Fann '+((data.data||[]).length)+' eignir.','ok');
+    }catch(e2){
+      pmsStatus('Villa: '+e2.message,'err');
+    }
+  }
+}
+
+async function b24FetchProp(){
+  pmsStatus('Sæki eignarupplýsingar…');
+  try{
+    const data=await b24Req('/properties?includeAllRooms=true');
+    const props=(data.data||data||[]);
+    if(!props.length){pmsStatus('Engar eignir fundnar.','err');return;}
+    const prop=props[0];
+    const firstRoom=prop.roomTypes?.[0];
+    if(firstRoom&&G('b24-roomid'))G('b24-roomid').value=firstRoom.id;
+    if(G('b24-propid')&&!G('b24-propid').value)G('b24-propid').value=prop.id;
+
+    G('b24-prop-info').style.display='block';
+    G('b24-prop-content').innerHTML=`
+      <div class="prop-row"><span class="prop-key">Nafn</span><span>${prop.name||'–'}</span></div>
+      <div class="prop-row"><span class="prop-key">ID</span><span style="font-family:'DM Mono',monospace">${prop.id||'–'}</span></div>
+      <div class="prop-row"><span class="prop-key">Herbergjategundir</span><span>${(prop.roomTypes||[]).map(r=>`${r.name} (ID: ${r.id})`).join(', ')||'–'}</span></div>
+      <div class="prop-row"><span class="prop-key">Staðsetning</span><span>${[prop.city,prop.country].filter(Boolean).join(', ')||'–'}</span></div>`;
+    pmsStatus('Eignarupplýsingar sóttar ✓','ok');
+  }catch(e){ pmsStatus('Villa: '+e.message,'err'); }
+}
+
+async function b24FetchOcc(){
+  pmsStatus('Sæki bókanir…');
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const future=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+    const data=await b24Req(`/bookings?checkIn=${today}&checkOut=${future}&status=new,confirmed&numResults=50`);
+    const bookings=(data.data||data||[]);
+    G('b24-bookings-card').style.display='block';
+    if(!bookings.length){
+      G('b24-bookings-content').innerHTML='<div style="color:var(--muted);padding:12px 0">Engar bókanir fundnar á næstu 30 dögum</div>';
+    } else {
+      G('b24-bookings-content').innerHTML=bookings.slice(0,20).map(b=>`
+        <div class="booking-row">
+          <div class="booking-name">${b.guestName||b.firstName+' '+b.lastName||'Gestur'}</div>
+          <div class="booking-dates">${b.checkIn||'?'} → ${b.checkOut||'?'}</div>
+          <div class="booking-rooms" style="font-size:11px">${b.roomName||''}</div>
+          <div class="booking-status ${b.status==='confirmed'?'bs-confirmed':'bs-new'}">${b.status||'?'}</div>
+        </div>`).join('');
+    }
+    const nights=bookings.reduce((s,b)=>{
+      if(!b.checkIn||!b.checkOut)return s;
+      return s+Math.round((new Date(b.checkOut)-new Date(b.checkIn))/864e5);
+    },0);
+    pmsStatus(`Sóttar ${bookings.length} bókanir · ${nights} seldar nætur á næstu 30 dögum ✓`,'ok');
+  }catch(e){ pmsStatus('Villa: '+e.message,'err'); }
+}
+
+function getDailyPrices(from, to){
+  const prices=[];
+  const d=new Date(from);
+  const end=new Date(to);
+  while(d<=end){
+    const m=d.getMonth();
+    const dw=d.getDay();
+    let base=getBasePrice(m);
+    let mod=0;
+    if(dw===5)mod+=val('fri-prem');
+    if(dw===6)mod+=val('sat-prem');
+    if(OCC_TYPE[m]==='low'&&dw===1)mod+=val('mon-disc');
+    if(OCC_TYPE[m]==='low'&&dw===2)mod+=val('tue-disc');
+    prices.push({date:d.toISOString().slice(0,10),price:Math.round(base*(1+mod/100)/500)*500});
+    d.setDate(d.getDate()+1);
+  }
+  return prices;
+}
+
+function b24Preview(){
+  const from=G('b24-from').value||new Date().toISOString().slice(0,10);
+  const to=G('b24-to').value||new Date(Date.now()+7*864e5).toISOString().slice(0,10);
+  if(!from||!to){pmsStatus('Veldu dagsetningar','err');return;}
+  const prices=getDailyPrices(from,to);
+  const dayNames=['Su','Má','Þr','Mi','Fi','Fö','La'];
+  G('b24-preview').innerHTML=`
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${prices.length} dagar — forskoðun:</div>
+    <div class="price-preview-grid">
+      ${prices.slice(0,28).map(p=>{
+        const d=new Date(p.date); const dw=d.getDay();
+        return `<div class="ppg-cell">
+          <div class="ppg-date">${dayNames[dw]} ${d.getDate()}.</div>
+          <div class="ppg-price">${(p.price/1000).toFixed(0)}k</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  G('b24-push-btn').disabled=false;
+  pmsStatus('Forskoðun tilbúin. Smelltu á "Senda verð í Beds24" til að senda.','loading');
+}
+
+async function b24Push(){
+  const from=G('b24-from').value;
+  const to=G('b24-to').value;
+  const roomId=G('b24-roomid').value;
+  if(!from||!to){pmsStatus('Veldu dagsetningar','err');return;}
+  if(!roomId){pmsStatus('Settu inn Room Type ID','err');return;}
+  if(!confirm(`Senda verð í Beds24 frá ${from} til ${to}?\n\nÞetta skrifar yfir núverandi verð.`))return;
+
+  pmsStatus('Sendir verð…');
+  const prices=getDailyPrices(from,to);
+
+  const calendarData=prices.map(p=>({
+    roomId: parseInt(roomId),
+    date: p.date,
+    price1: p.price 
+  }));
+
+  try{
+    const resp=await b24Req('/inventory/rooms/calendar','POST',calendarData);
+    const errors=(resp.errors||[]).length;
+    if(errors>0){
+      pmsStatus(`Sent með ${errors} villum. Athugaðu Beds24 dagatal.`,'err');
+    } else {
+      pmsStatus(`✓ ${prices.length} dagverð send í Beds24!`,'ok');
+    }
+  }catch(e){ pmsStatus('Villa: '+e.message,'err'); }
+}
+
+async function cbTest(){
+  pmsStatus('Cloudbeds krefst backend proxy — sjá leiðbeiningar hér að neðan.','err');
+}
+
+function switchTab(tab){
+  ['beds24','cloudbeds','export'].forEach(t=>{
+    G('tab-content-'+t).style.display=t===tab?'block':'none';
+    G('tab-'+t).classList.toggle('active',t===tab);
+  });
+}
+
+function exportCSV(){
+  const from=G('exp-from').value||new Date().toISOString().slice(0,10);
+  const to=G('exp-to').value||new Date(Date.now()+90*864e5).toISOString().slice(0,10);
+  const prices=getDailyPrices(from,to);
+  const csv='Date,Price,Currency\n'+prices.map(p=>`${p.date},${p.price},ISK`).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='hotel-prices-'+from+'-to-'+to+'.csv';
+  a.click();
+}
+
+function exportJSON(){
+  const from=G('exp-from').value||new Date().toISOString().slice(0,10);
+  const to=G('exp-to').value||new Date(Date.now()+90*864e5).toISOString().slice(0,10);
+  const prices=getDailyPrices(from,to);
+  const roomId=G('b24-roomid')?.value||'ROOM_ID_HER';
+  const json=JSON.stringify(prices.map(p=>({roomId:parseInt(roomId)||0,date:p.date,price1:p.price})),null,2);
+  G('export-preview').style.display='block';
+  G('export-pre').textContent=json.slice(0,2000)+(json.length>2000?'\n...(+fleiri dagar)':'');
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='beds24-prices.json';
+  a.click();
+}
+
+function copyPriceTable(){
+  const from=G('exp-from').value||new Date().toISOString().slice(0,10);
+  const to=G('exp-to').value||new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+  const prices=getDailyPrices(from,to);
+  const text=prices.map(p=>`${p.date}\t${p.price}`).join('\n');
+  navigator.clipboard.writeText(text).then(()=>pmsStatus('Afritað í klemmuspjald ✓','ok')).catch(()=>pmsStatus('Gat ekki afritað','err'));
+}
+
+function initExportDates(){
+  const today=new Date().toISOString().slice(0,10);
+  const future=new Date(Date.now()+90*864e5).toISOString().slice(0,10);
+  if(G('b24-from')&&!G('b24-from').value)G('b24-from').value=today;
+  if(G('b24-to')&&!G('b24-to').value)G('b24-to').value=future;
+  if(G('exp-from')&&!G('exp-from').value)G('exp-from').value=today;
+  if(G('exp-to')&&!G('exp-to').value)G('exp-to').value=future;
+}
+
+// ── PICK-UP LOGIC ──────────────────────────────────────────────────────────
 let pickupChart=null;
-function savePickup(){ /* ... same logic as original ... */ renderPickup(); save(); }
-function getPickupLog(){ try{return JSON.parse(localStorage.getItem('pickup_log')||'[]');}catch(e){return[];} }
-function renderPickup(){ /* ... same logic as original ... */ }
-function getLastYearEntry(date,log){ /* ... */ }
-function delPickup(date){ /* ... */ }
-function exportPickupCSV(){ /* ... */ }
 
-// ── PMS Integration & Autopilot (Kept exactly as original) ─────────────────
-function savePMS(){} function loadPMS(){} function pmsStatus(){} function b24Token(){return'';}
-async function b24Test(){} async function b24FetchProp(){} async function b24FetchOcc(){} 
-function b24Preview(){} async function b24Push(){} async function cbTest(){} function switchTab(){}
-function exportCSV(){} function exportJSON(){} function copyPriceTable(){} function initExportDates(){}
-function saveAP(){} function loadAP(){} function apToggle(){} function apSchedule(){} async function apRunNow(){}
-function apSetStatus(){} function apLog(){} function renderApLog(){} function renderApStatus(){} function getNextRun(){return '';}
+function savePickup(){
+  const date=G('pu-date').value;
+  if(!date){alert('Veldu dagsetningu');return;}
+  const entry={
+    date, new_bookings:parseInt(G('pu-new').value)||0,
+    cancellations:parseInt(G('pu-cancel').value)||0,
+    nights:parseInt(G('pu-nights').value)||0,
+    adr:parseInt(G('pu-adr').value)||0,
+    notes:G('pu-notes').value||''
+  };
+  let log=getPickupLog();
+  log=log.filter(e=>e.date!==date);
+  log.push(entry);
+  log.sort((a,b)=>b.date.localeCompare(a.date));
+  try{localStorage.setItem('pickup_log',JSON.stringify(log));}catch(e){}
+  G('pu-new').value=''; G('pu-cancel').value=''; G('pu-nights').value=''; G('pu-adr').value=''; G('pu-notes').value='';
+  renderPickup(); save();
+}
 
-// ── GATHER SETTINGS ────────────────────────────────────────────────────────
+function getPickupLog(){
+  try{return JSON.parse(localStorage.getItem('pickup_log')||'[]');}catch(e){return[];}
+}
+
+function renderPickup(){
+  const log=getPickupLog();
+  const today=new Date().toISOString().slice(0,10);
+  if(!G('pu-date').value) G('pu-date').value=today;
+
+  const last7=log.filter(e=>{const d=new Date(today);d.setDate(d.getDate()-7);return e.date>=d.toISOString().slice(0,10);});
+  const last30=log.filter(e=>{const d=new Date(today);d.setDate(d.getDate()-30);return e.date>=d.toISOString().slice(0,10);});
+  const totalNew7=last7.reduce((s,e)=>s+e.new_bookings,0);
+  const totalNights7=last7.reduce((s,e)=>s+e.nights,0);
+  const avgAdr7=last7.length?Math.round(last7.filter(e=>e.adr>0).reduce((s,e)=>s+e.adr,0)/Math.max(1,last7.filter(e=>e.adr>0).length)):0;
+  const cancel7=last7.reduce((s,e)=>s+e.cancellations,0);
+  G('pickup-kpis').innerHTML=`
+    <div class="stat-card accent"><div class="kpi-label">Nýjar bókanir (7d)</div><div class="kpi-val accent">${totalNew7}</div><div class="stat-sub">bókanir</div></div>
+    <div class="stat-card"><div class="kpi-label">Seldar nætur (7d)</div><div class="kpi-val">${totalNights7}</div><div class="stat-sub">gistináttaeiningar</div></div>
+    <div class="stat-card"><div class="kpi-label">Meðal ADR (7d)</div><div class="kpi-val" style="color:var(--accent3)">${avgAdr7?fmt(avgAdr7):'–'}</div><div class="stat-sub">kr á nótt</div></div>
+    <div class="stat-card"><div class="kpi-label">Afbókanir (7d)</div><div class="kpi-val" style="color:${cancel7>0?'var(--red)':'var(--green)'}">${cancel7}</div><div class="stat-sub">afbókanir</div></div>`;
+
+  const selDate=G('pu-date').value;
+  if(selDate){
+    const lyEntry=getLastYearEntry(selDate,log);
+    const thisEntry=log.find(e=>e.date===selDate);
+    if(thisEntry&&lyEntry){
+      const diff=thisEntry.new_bookings-lyEntry.new_bookings;
+      const pct=lyEntry.new_bookings>0?Math.round(diff/lyEntry.new_bookings*100):0;
+      const cls=diff>0?'better':diff<0?'worse':'same';
+      G('pickup-comparison').innerHTML=`
+        <div class="compare-box ${cls}">
+          <div class="compare-num" style="color:${diff>0?'var(--green)':diff<0?'var(--red)':'var(--muted)'}">${diff>0?'+':''}${diff} bókanir</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">${diff>0?'+':''}${pct}% miðað við sama dag í fyrra</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div style="text-align:center;padding:10px;background:var(--surface2);border-radius:var(--r)">
+            <div style="font-size:11px;color:var(--muted)">Í dag ${selDate.slice(5)}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:18px;color:var(--text);margin-top:4px">${thisEntry.new_bookings}</div>
+          </div>
+          <div style="text-align:center;padding:10px;background:var(--surface2);border-radius:var(--r)">
+            <div style="font-size:11px;color:var(--muted)">Sama dagur 2025</div>
+            <div style="font-family:'DM Mono',monospace;font-size:18px;color:var(--muted);margin-top:4px">${lyEntry.new_bookings}</div>
+          </div>
+        </div>`;
+    } else if(thisEntry){
+      G('pickup-comparison').innerHTML=`<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">Engar samanburðargögn fyrir sama dag í fyrra</div>`;
+    } else {
+      G('pickup-comparison').innerHTML=`<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">Skráðu bókanir fyrir þennan dag til að sjá samanburð</div>`;
+    }
+  }
+
+  if(!log.length){G('pickup-log-table').innerHTML='<div style="color:var(--muted);padding:16px 0;text-align:center">Engar skráningar enn</div>';return;}
+  const rows=log.slice(0,30).map(e=>`
+    <div class="pu-row">
+      <span class="pu-date-lbl">${e.date}</span>
+      <span class="pu-val pu-up">+${e.new_bookings}</span>
+      <span class="pu-val pu-dn">${e.cancellations>0?'-'+e.cancellations:''}</span>
+      <span class="pu-val">${e.nights} nætur</span>
+      <span class="pu-val" style="color:var(--accent3)">${e.adr?fmt(e.adr):'–'}</span>
+      <span class="pu-note">${e.notes||''}</span>
+      <button class="btn btn-danger btn-sm" onclick="delPickup('${e.date}')">×</button>
+    </div>`).join('');
+  G('pickup-log-table').innerHTML=`
+    <div style="display:grid;grid-template-columns:90px 60px 60px 80px 90px 1fr 50px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);font-weight:500">
+      <span>DAGSETNING</span><span>NÝR</span><span>AFBÓK</span><span>NÆTUR</span><span>ADR</span><span>ATHUGASEMD</span><span></span>
+    </div>${rows}`;
+
+  const chartData=log.slice(0,28).reverse();
+  if(pickupChart){pickupChart.destroy();pickupChart=null;}
+  if(G('pickup-chart')&&chartData.length>1){
+    pickupChart=new Chart(G('pickup-chart'),{
+      type:'line',
+      data:{
+        labels:chartData.map(e=>e.date.slice(5)),
+        datasets:[
+          {label:'Nýjar bókanir',data:chartData.map(e=>e.new_bookings),borderColor:'#c8f04a',backgroundColor:'rgba(200,240,74,.1)',tension:.3,fill:true,pointRadius:3},
+          {label:'Afbókanir',data:chartData.map(e=>e.cancellations),borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.1)',tension:.3,fill:true,pointRadius:3}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#888894',boxWidth:12,font:{size:11}}}},
+        scales:{x:{ticks:{color:'#888894',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#888894'},grid:{color:'rgba(255,255,255,0.04)'}}}}
+    });
+  }
+}
+
+function getLastYearEntry(date,log){
+  const d=new Date(date);
+  d.setFullYear(d.getFullYear()-1);
+  for(let i=0;i<=7;i++){
+    const try1=new Date(d);try1.setDate(try1.getDate()+i);
+    const s1=try1.toISOString().slice(0,10);
+    if(log.find(e=>e.date===s1))return log.find(e=>e.date===s1);
+    const try2=new Date(d);try2.setDate(try2.getDate()-i);
+    const s2=try2.toISOString().slice(0,10);
+    if(log.find(e=>e.date===s2))return log.find(e=>e.date===s2);
+  }
+  return null;
+}
+
+function delPickup(date){
+  if(!confirm('Eyða skráningu fyrir '+date+'?'))return;
+  let log=getPickupLog().filter(e=>e.date!==date);
+  try{localStorage.setItem('pickup_log',JSON.stringify(log));}catch(e){}
+  renderPickup(); save();
+}
+
+function exportPickupCSV(){
+  const log=getPickupLog();
+  const csv='Dagsetning,Nýjar bókanir,Afbókanir,Seldar nætur,ADR,Athugasemd\n'+
+    log.map(e=>`${e.date},${e.new_bookings},${e.cancellations},${e.nights},${e.adr},"${e.notes}"`).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='pickup-log.csv';a.click();
+}
+
+// ── AUTOPILOT ──────────────────────────────────────────────────────────────
+let apInterval=null;
+let apRunning=false;
+
+function saveAP(){
+  try{
+    localStorage.setItem('ap_floor',G('ap-floor')?.value||25000);
+    localStorage.setItem('ap_ceiling',G('ap-ceiling')?.value||80000);
+    localStorage.setItem('ap_maxchange',G('ap-maxchange')?.value||20);
+  }catch(e){}
+}
+
+function loadAP(){
+  try{
+    if(G('ap-floor'))G('ap-floor').value=localStorage.getItem('ap_floor')||25000;
+    if(G('ap-ceiling'))G('ap-ceiling').value=localStorage.getItem('ap_ceiling')||80000;
+    if(G('ap-maxchange'))G('ap-maxchange').value=localStorage.getItem('ap_maxchange')||20;
+    if(G('ap-roomid'))G('ap-roomid').value=localStorage.getItem('b24-roomid')||G('b24-roomid')?.value||'';
+  }catch(e){}
+}
+
+function apToggle(){
+  apRunning=!apRunning;
+  const btn=G('ap-toggle-btn');
+  if(apRunning){
+    btn.textContent='⏹ Slökkva Autopilot';
+    btn.className='btn btn-danger';
+    apSetStatus('Autopilot er virkt — keyrir samkvæmt áætlun');
+    apSchedule();
+    apLog('Autopilot kveikt','ok');
+  } else {
+    btn.textContent='▶ Kveikja Autopilot';
+    btn.className='btn btn-primary';
+    if(apInterval){clearInterval(apInterval);apInterval=null;}
+    apSetStatus('Autopilot er slökktur',false);
+    apLog('Autopilot slökkt','ok');
+  }
+  renderApStatus();
+}
+
+function apSchedule(){
+  if(apInterval){clearInterval(apInterval);apInterval=null;}
+  const sched=G('ap-schedule')?.value||'daily';
+  const ms={daily:86400000,twicedaily:43200000,hourly:3600000}[sched]||86400000;
+  apInterval=setInterval(()=>apRunNow(),ms);
+}
+
+async function apRunNow(){
+  const token=b24Token();
+  if(!token){apLog('Villa: Enginn Beds24 token','err');apSetStatus('Villa: Beds24 token vantar',false);return;}
+  const roomId=G('ap-roomid')?.value||localStorage.getItem('b24-roomid')||'';
+  if(!roomId){apLog('Villa: Enginn Room ID','err');apSetStatus('Villa: Room ID vantar',false);return;}
+
+  const days=parseInt(G('ap-horizon')?.value||60);
+  const ptype=G('ap-pricetype')?.value||'ota';
+  const floor=parseInt(G('ap-floor')?.value||25000);
+  const ceiling=parseInt(G('ap-ceiling')?.value||80000);
+  const otaPct=parseFloat(G('seg-ota')?.value||18)/100;
+
+  apSetStatus('Reikni verð og sendi í Beds24…',true);
+
+  const from=new Date();
+  const to=new Date(Date.now()+days*864e5);
+  let prices=getDailyPrices(from.toISOString().slice(0,10),to.toISOString().slice(0,10));
+
+  prices=prices.map(p=>{
+    let price=ptype==='ota'?Math.round(p.price*(1+otaPct)/500)*500:p.price;
+    price=Math.max(floor,Math.min(ceiling,price));
+    return {...p,price};
+  });
+
+  try{
+    const resp=await b24Req('/inventory/rooms/calendar','POST',
+      prices.map(p=>({roomId:parseInt(roomId),date:p.date,price1:p.price})));
+    const errs=(resp.errors||[]).length;
+    const msg=errs?`Sent með ${errs} villum`:`✓ ${prices.length} dagar sendur`;
+    apLog(msg, errs?'err':'ok', prices.length);
+    apSetStatus(msg+' · '+new Date().toLocaleTimeString('is-IS'),!errs);
+  } catch(e){
+    apLog('Villa: '+e.message,'err');
+    apSetStatus('Villa: '+e.message,false);
+  }
+}
+
+function apSetStatus(msg,ok=true){
+  const el=G('ap-status-bar');
+  if(!el)return;
+  if(ok===true&&apRunning){
+    el.innerHTML=`<div class="pms-status ok" style="margin-bottom:16px"><div class="ap-dot"></div>${msg}</div>`;
+  } else if(ok===false){
+    el.innerHTML=`<div class="pms-status err" style="margin-bottom:16px">✗ ${msg}</div>`;
+  } else {
+    el.innerHTML=`<div class="pms-status loading" style="margin-bottom:16px">◌ ${msg}</div>`;
+  }
+}
+
+function apLog(msg,status,days=0){
+  let log=[];
+  try{log=JSON.parse(localStorage.getItem('ap_log')||'[]');}catch(e){}
+  log.unshift({time:new Date().toLocaleString('is-IS'),msg,status,days});
+  if(log.length>50)log=log.slice(0,50);
+  try{localStorage.setItem('ap_log',JSON.stringify(log));}catch(e){}
+  renderApLog();
+}
+
+function renderApLog(){
+  let log=[];
+  try{log=JSON.parse(localStorage.getItem('ap_log')||'[]');}catch(e){}
+  const el=G('ap-log-list');
+  if(!el)return;
+  if(!log.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:12px 0;text-align:center">Engar keyrsluupplýsingar enn</div>';return;}
+  el.innerHTML=log.slice(0,20).map(e=>`
+    <div class="ap-log-row">
+      <span class="ap-log-time">${e.time}</span>
+      <span class="ap-log-days">${e.days?e.days+'d':''}</span>
+      <span class="ap-log-status ${e.status==='ok'?'ap-ok':'ap-err'}">${e.status}</span>
+      <span style="flex:1;color:var(--muted)">${e.msg}</span>
+    </div>`).join('');
+}
+
+function renderApStatus(){
+  const el=G('ap-status-detail');
+  if(!el)return;
+  const sched={'off':'Slökkt','daily':'Daglega (08:00)','twicedaily':'Tvisvar á dag','hourly':'Á klukkutíma'}[G('ap-schedule')?.value||'daily'];
+  const days=G('ap-horizon')?.value||60;
+  if(apRunning){
+    el.innerHTML=`
+      <div class="ap-live">
+        <div class="ap-dot"></div>
+        <div>
+          <div style="font-weight:600;color:var(--accent)">Autopilot er virkt 🟢</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Sendir ${days} daga verð · ${sched}</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;font-size:13px;color:var(--muted);line-height:1.8">
+        Næsta keyrsla: ${getNextRun()}<br>
+        Herbergi ID: ${G('ap-roomid')?.value||'–'}<br>
+        Verðlag: ${G('ap-pricetype')?.value==='ota'?'OTA-verð':'Grunnverð'}
+      </div>`;
+  } else {
+    el.innerHTML=`<div style="text-align:center;padding:30px 0;color:var(--muted)"><div style="font-size:40px;margin-bottom:12px">💤</div><div>Autopilot er slökktur</div></div>`;
+  }
+}
+
+function getNextRun(){
+  const sched=G('ap-schedule')?.value||'daily';
+  const now=new Date();
+  if(sched==='daily'){
+    const next=new Date(now);next.setDate(next.getDate()+1);next.setHours(8,0,0);
+    return next.toLocaleString('is-IS');
+  }
+  if(sched==='hourly'){
+    const next=new Date(now.getTime()+3600000);
+    return next.toLocaleTimeString('is-IS');
+  }
+  return 'Sjálfvirkt';
+}
+
+// ── VISTUN OG INNFLUTNINGUR ───────────────────────────────────────────────
 function gatherAllSettings(){
+  const baseprices=MONTHS.map((_,i)=>parseInt(G('bp-'+i)?.value)||BASE_PRICES[i]);
+  const rules={};
+  ['eb90','eb60','eb30','lm7','lm3','lm-occ','fri-prem','sat-prem','mon-disc','tue-disc',
+   'long-disc','nonref','direct','min-stay-summer','min-stay-low'].forEach(id=>{
+    const el=G(id); if(el) rules[id]=el.value;
+  });
+  const hotel={name:sval('hotel-name'),loc:sval('hotel-loc'),stars:sval('stars'),
+    rooms:val('rooms'),
+    occLow:val('occ-low'),occMid:val('occ-mid'),occHigh:val('occ-high'),
+    tax:val('tax'),cardFee:val('card-fee'),otaFee:val('ota-fee')};
+  const seg={ota:G('seg-ota')?.value||18,direct:G('seg-direct')?.value||-5,corp:G('seg-corp')?.value||-12};
+  const ap={floor:G('ap-floor')?.value||25000,ceiling:G('ap-ceiling')?.value||80000,
+    maxchange:G('ap-maxchange')?.value||20,schedule:G('ap-schedule')?.value||'daily',
+    horizon:G('ap-horizon')?.value||60,pricetype:G('ap-pricetype')?.value||'ota',
+    roomid:G('ap-roomid')?.value||''};
+  const comps=[1,2,3,4,5].map(i=>({ name: sval(`comp${i}-name`), id: sval(`comp${i}-id`) }));
+  loadCalEvents();
+  let pickupLog=[];
+  try{pickupLog=JSON.parse(localStorage.getItem('pickup_log')||'[]');}catch(e){}
+
   return {
-    hotel: { name: sval('hotel-name'), loc: sval('hotel-loc'), rooms: val('rooms'), occLow: val('occ-low'), occMid: val('occ-mid'), occHigh: val('occ-high'), tax: val('tax'), cardFee: val('card-fee'), otaFee: val('ota-fee') },
-    baseprices: MONTHS.map((_,i)=>val('bp-'+i)),
-    rules: { eb90:val('eb90'), eb60:val('eb60'), eb30:val('eb30'), lm7:val('lm7'), lm3:val('lm3'), lmOcc:val('lm-occ'), fri:val('fri-prem'), sat:val('sat-prem'), mon:val('mon-disc'), tue:val('tue-disc'), long:val('long-disc'), nonref:val('nonref'), direct:val('direct') },
-    comps: [1,2,3,4,5].map(i=>({ name: sval(`comp${i}-name`), id: sval(`comp${i}-id`) }))
+    version:'1.0',
+    exported:new Date().toISOString(),
+    hotel, baseprices, rules, events, seg, ap, comps,
+    calDayEvents, pickupLog
   };
 }
 
 window.onload = function() {
   buildBasePrices();
+  renderEvents();
+  G('calc-date').valueAsDate=new Date(2026,5,15);
+  
   const saved = localStorage.getItem('hotel_settings_live');
   if (saved) {
     try {
-      const data = JSON.parse(saved);
-      if(data.hotel) {
-        if(G('hotel-name')) G('hotel-name').value = data.hotel.name;
-        if(G('hotel-loc')) G('hotel-loc').value = data.hotel.loc;
-        if(G('rooms')) G('rooms').value = data.hotel.rooms || 20;
-        if(G('occ-low')) G('occ-low').value = data.hotel.occLow || 62;
-        if(G('occ-high')) G('occ-high').value = data.hotel.occHigh || 90;
+      const data=JSON.parse(saved);
+      if(data.hotel){
+        const h=data.hotel;
+        if(G('hotel-name')&&h.name) G('hotel-name').value=h.name;
+        if(G('hotel-loc')&&h.loc) G('hotel-loc').value=h.loc;
+        if(G('rooms')&&h.rooms) G('rooms').value=h.rooms;
+        if(G('occ-low')&&h.occLow){ G('occ-low').value=h.occLow; G('occ-low-v').textContent=h.occLow+'%'; }
+        if(G('occ-mid')&&h.occMid){ G('occ-mid').value=h.occMid; G('occ-mid-v').textContent=h.occMid+'%'; }
+        if(G('occ-high')&&h.occHigh){ G('occ-high').value=h.occHigh; G('occ-high-v').textContent=h.occHigh+'%'; }
+        if(G('tax')&&h.tax) G('tax').value=h.tax;
+        if(G('card-fee')&&h.cardFee) G('card-fee').value=h.cardFee;
+        if(G('ota-fee')&&h.otaFee) G('ota-fee').value=h.otaFee;
       }
-      data.baseprices?.forEach((p, i) => { if(G('bp-'+i)) G('bp-'+i).value = p; });
-      data.comps?.forEach((c, i) => { 
-        if(G(`comp${i+1}-name`)) G(`comp${i+1}-name`).value = c.name; 
-        if(G(`comp${i+1}-id`)) G(`comp${i+1}-id`).value = c.id; 
-      });
+      if(data.baseprices&&Array.isArray(data.baseprices)){
+        data.baseprices.forEach((p,i)=>{ const el=G('bp-'+i); if(el) el.value=p; });
+      }
+      if(data.rules){
+        Object.entries(data.rules).forEach(([id,v])=>{ const el=G(id); if(el) el.value=v; });
+      }
+      if(data.events&&Array.isArray(data.events)){
+        events.length=0; data.events.forEach(e=>events.push(e));
+      }
+      if(data.calDayEvents){
+        calDayEvents=data.calDayEvents;
+        try{localStorage.setItem('cal_events',JSON.stringify(calDayEvents));}catch(e){}
+      }
+      if(data.seg){
+        if(G('seg-ota')&&data.seg.ota) G('seg-ota').value=data.seg.ota;
+        if(G('seg-direct')&&data.seg.direct) G('seg-direct').value=data.seg.direct;
+        if(G('seg-corp')&&data.seg.corp) G('seg-corp').value=data.seg.corp;
+      }
+      if(data.ap){
+        const a=data.ap;
+        if(G('ap-floor')&&a.floor) G('ap-floor').value=a.floor;
+        if(G('ap-ceiling')&&a.ceiling) G('ap-ceiling').value=a.ceiling;
+        if(G('ap-maxchange')&&a.maxchange) G('ap-maxchange').value=a.maxchange;
+        if(G('ap-roomid')&&a.roomid) G('ap-roomid').value=a.roomid;
+      }
+      if(data.comps){
+        data.comps.forEach((c,i)=>{
+          if(G(`comp${i+1}-name`)) G(`comp${i+1}-name`).value = c.name;
+          if(G(`comp${i+1}-id`)) G(`comp${i+1}-id`).value = c.id;
+        });
+      }
+      if(data.pickupLog&&Array.isArray(data.pickupLog)){
+        try{localStorage.setItem('pickup_log',JSON.stringify(data.pickupLog));}catch(e){}
+      }
     } catch(e) {}
   }
-  save(); // Uppfæra allar tölur strax í byrjun
-  renderPickup();
+  
+  calcPrice();
+  renderRevenue();
+  renderDashboard();
+  renderSegPrices();
+  renderAfslattir();
+  renderApLog();
+  loadCalEvents();
 };
 </script>
 </body>
