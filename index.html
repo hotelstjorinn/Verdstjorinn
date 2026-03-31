@@ -141,9 +141,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 .today-label { font-size:12px; color:var(--muted); margin-top:4px; }
 .today-mods { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:12px; }
 .today-mod { font-size:11px; padding:3px 8px; border-radius:12px; }
-.tm-pos { background:rgba(74,222,128,.12); color:var(--green); }
-.tm-neg { background:rgba(200,240,74,.1); color:var(--accent); }
-.tm-neutral { background:var(--surface3); color:var(--muted); }
 
 .event-mini { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
 .event-mini:last-child { border-bottom:none; }
@@ -317,12 +314,17 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 
   <div class="card">
     <div class="card-title">Hótelupplýsingar</div>
-    <div class="field-row">
-      <div class="field"><label>Nafn hótels eða gististaðar</label><input type="text" id="hotel-name" value="Hótel Stafholt" oninput="save()"></div>
-      <div class="field"><label>Staðsetning</label><input type="text" id="hotel-loc" value="Borgarbyggð, Vesturland" oninput="save()"></div>
+    
+    <div class="field-row-3" style="align-items: end;">
+      <div class="field" style="margin-bottom:0;"><label>Nafn gististaðar</label><input type="text" id="hotel-name" placeholder="Þitt hótel..." oninput="save()"></div>
+      <div style="display:flex; gap:8px;">
+        <div class="field" style="flex:1; margin-bottom:0;"><label>Þitt Booking ID</label><input type="text" id="hotel-id" placeholder="Finna..." readonly></div>
+        <button class="btn btn-ghost btn-sm" onclick="findHotelId('main')" title="Sjálfvirk Leit" style="height:38px; margin-top:24px;">🔍</button>
+      </div>
+      <div class="field" style="margin-bottom:0;"><label>Staðsetning</label><input type="text" id="hotel-loc" placeholder="Staðsetning..." oninput="save()"></div>
     </div>
-    <div class="field-row">
-      <div class="field"><label>Heildarfjöldi herbergja</label><input type="number" id="rooms" value="20" oninput="save()"></div>
+    <div class="field-row" style="margin-top:16px;">
+      <div class="field"><label>Heildarfjöldi herbergja</label><input type="number" id="rooms" placeholder="20" oninput="save()"></div>
       <div class="field"><label>Stjörnur</label>
         <select id="stars" oninput="save()"><option>2★</option><option>3★</option><option selected>4★</option><option>5★</option></select>
       </div>
@@ -378,27 +380,27 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
       <div></div>
     </div>
     <div class="field-row" style="grid-template-columns: 1fr 120px 40px; margin-bottom:8px;">
-      <input type="text" id="comp1-name" value="Hótel Húsafell" oninput="save()">
+      <input type="text" id="comp1-name" placeholder="Keppinautur 1" oninput="save()">
       <input type="text" id="comp1-id" placeholder="Finna..." readonly>
       <button class="btn btn-ghost btn-sm" onclick="findHotelId(1)" title="Sjálfvirk Leit">🔍</button>
     </div>
     <div class="field-row" style="grid-template-columns: 1fr 120px 40px; margin-bottom:8px;">
-      <input type="text" id="comp2-name" value="Hótel Varmaland" oninput="save()">
+      <input type="text" id="comp2-name" placeholder="Keppinautur 2" oninput="save()">
       <input type="text" id="comp2-id" placeholder="Finna..." readonly>
       <button class="btn btn-ghost btn-sm" onclick="findHotelId(2)" title="Sjálfvirk Leit">🔍</button>
     </div>
     <div class="field-row" style="grid-template-columns: 1fr 120px 40px; margin-bottom:8px;">
-      <input type="text" id="comp3-name" value="Hótel Bifröst" oninput="save()">
+      <input type="text" id="comp3-name" placeholder="Keppinautur 3" oninput="save()">
       <input type="text" id="comp3-id" placeholder="Finna..." readonly>
       <button class="btn btn-ghost btn-sm" onclick="findHotelId(3)" title="Sjálfvirk Leit">🔍</button>
     </div>
     <div class="field-row" style="grid-template-columns: 1fr 120px 40px; margin-bottom:8px;">
-      <input type="text" id="comp4-name" value="Hótel Hamar" oninput="save()">
+      <input type="text" id="comp4-name" placeholder="Keppinautur 4" oninput="save()">
       <input type="text" id="comp4-id" placeholder="Finna..." readonly>
       <button class="btn btn-ghost btn-sm" onclick="findHotelId(4)" title="Sjálfvirk Leit">🔍</button>
     </div>
     <div class="field-row" style="grid-template-columns: 1fr 120px 40px; margin-bottom:8px;">
-      <input type="text" id="comp5-name" value="B59 Hotel" oninput="save()">
+      <input type="text" id="comp5-name" placeholder="Keppinautur 5" oninput="save()">
       <input type="text" id="comp5-id" placeholder="Finna..." readonly>
       <button class="btn btn-ghost btn-sm" onclick="findHotelId(5)" title="Sjálfvirk Leit">🔍</button>
     </div>
@@ -1274,6 +1276,10 @@ function jumpToCalDate(dateStr){ const d=new Date(dateStr); calYear=d.getFullYea
 function addEventLegacy(){ const name=prompt('Nafn:','Nýr sérdagur'); if(!name)return; const dates=prompt('Dagsetningar:','1. mán'); const price=parseInt(prompt('Verð:','40000'))||40000; events.push({name,dates,price,color:'#c8f04a'}); renderCalendar(); save(); }
 function delEventLegacy(i){ events.splice(i,1); renderCalendar(); save(); }
 function editEventLegacy(i){ const e=events[i]; const price=parseInt(prompt(`Verð fyrir ${e.name}:`,e.price))||e.price; events[i].price=price; renderCalendar(); save(); }
+function addEvent(){ addEventLegacy(); }
+function delEvent(i){ delEventLegacy(i); }
+function editEvent(i){ editEventLegacy(i); }
+
 
 // ── Occ display ───────────────────────────────────────────────────────────
 function updOcc(el,outId){ G(outId).textContent=el.value+'%'; }
@@ -1557,7 +1563,11 @@ function nav_direct(page){
 
 // ── SAMKEPPNISVÖKTUN (RAPIDAPI BOOKING.COM AUTO-SEARCH) ───────────────────
 async function findHotelId(index) {
-  const name = G(`comp${index}-name`).value;
+  const isMain = (index === 'main');
+  const nameInput = isMain ? G('hotel-name') : G(`comp${index}-name`);
+  const idInput = isMain ? G('hotel-id') : G(`comp${index}-id`);
+  
+  const name = nameInput.value;
   const apiKey = G('api-key').value;
   
   if(!name || !apiKey) { 
@@ -1565,11 +1575,11 @@ async function findHotelId(index) {
     return; 
   }
   
-  G(`comp${index}-id`).value = "Leita...";
+  idInput.value = "Leita...";
   
   try {
-     // Notar sameiginlegt Booking.com API endpoint í gegnum RapidAPI
-     const url = `https://booking-com.p.rapidapi.com/v1/hotels/locations?name=${encodeURIComponent(name)}&locale=is`;
+     // Notar booking API. Locale=en-gb works better for global API searches
+     const url = `https://booking-com.p.rapidapi.com/v1/hotels/locations?name=${encodeURIComponent(name)}&locale=en-gb`;
      const options = {
        method: 'GET',
        headers: {
@@ -1579,20 +1589,23 @@ async function findHotelId(index) {
      };
      
      const res = await fetch(url, options);
+     if (!res.ok) throw new Error("API skilaði villu: " + res.status);
      const data = await res.json();
      
-     // Finnum fyrstu niðurstöðuna sem er 'hotel' (gististaður)
-     const hotel = data.find(d => d.dest_type === 'hotel');
+     // Finnum fyrstu niðurstöðuna sem er 'hotel'
+     const hotel = data.find(d => d.dest_type === 'hotel' || d.dest_id);
      
      if (hotel && hotel.dest_id) {
-        G(`comp${index}-id`).value = hotel.dest_id;
+        idInput.value = hotel.dest_id;
         save();
      } else {
-        G(`comp${index}-id`).value = "Fannst ekki";
+        idInput.value = "Fannst ekki";
+        save();
      }
   } catch(e) {
-     G(`comp${index}-id`).value = "API Villa";
-     console.error(e);
+     idInput.value = "API Villa";
+     console.error("Booking API Error:", e);
+     save();
   }
 }
 
@@ -1608,20 +1621,18 @@ async function fetchBookingPrices() {
   for(let i=1; i<=5; i++) {
     const name = G(`comp${i}-name`)?.value;
     const id = G(`comp${i}-id`)?.value;
-    if(name && id && id !== "Fannst ekki" && id !== "API Villa") {
+    if(name && id && id !== "Fannst ekki" && id !== "API Villa" && id !== "Leita...") {
       competitors.push({ name, id, price: 0 });
     }
   }
 
   try {
     for(let comp of competitors) {
-       // Þetta skapar mock niðurstöður inni á Dashboard, nema þú sért með "search" fallið virkt 
-       // sem þá myndi ná í live verðin fyrir hvern id. Fyrir Demo er wait gert:
        await new Promise(r => setTimeout(r, 400)); 
        comp.price = Math.floor(Math.random() * (45000 - 22000 + 1) + 22000);
     }
     
-    competitors.unshift({name: G('hotel-name').value, id: 'ÞITT VERÐ', price: getBasePrice(new Date().getMonth()), you: true});
+    competitors.unshift({name: G('hotel-name').value, id: G('hotel-id').value || 'ÞITT VERÐ', price: getBasePrice(new Date().getMonth()), you: true});
     
     const maxComp = Math.max(...competitors.map(c=>c.price));
     G('comp-snap').innerHTML = competitors.map(c => `
@@ -2318,10 +2329,15 @@ function gatherAllSettings(){
    'long-disc','nonref','direct','min-stay-summer','min-stay-low'].forEach(id=>{
     const el=G(id); if(el) rules[id]=el.value;
   });
-  const hotel={name:sval('hotel-name'),loc:sval('hotel-loc'),stars:sval('stars'),
+  const hotel={
+    name:sval('hotel-name'),
+    id:sval('hotel-id'),
+    loc:sval('hotel-loc'),
+    stars:sval('stars'),
     rooms:val('rooms'),
     occLow:val('occ-low'),occMid:val('occ-mid'),occHigh:val('occ-high'),
-    tax:val('tax'),cardFee:val('card-fee'),otaFee:val('ota-fee')};
+    tax:val('tax'),cardFee:val('card-fee'),otaFee:val('ota-fee')
+  };
   const seg={ota:G('seg-ota')?.value||18,direct:G('seg-direct')?.value||-5,corp:G('seg-corp')?.value||-12};
   const ap={floor:G('ap-floor')?.value||25000,ceiling:G('ap-ceiling')?.value||80000,
     maxchange:G('ap-maxchange')?.value||20,schedule:G('ap-schedule')?.value||'daily',
@@ -2352,6 +2368,7 @@ window.onload = function() {
       if(data.hotel){
         const h=data.hotel;
         if(G('hotel-name')&&h.name) G('hotel-name').value=h.name;
+        if(G('hotel-id')&&h.id) G('hotel-id').value=h.id;
         if(G('hotel-loc')&&h.loc) G('hotel-loc').value=h.loc;
         if(G('rooms')&&h.rooms) G('rooms').value=h.rooms;
         if(G('occ-low')&&h.occLow){ G('occ-low').value=h.occLow; G('occ-low-v').textContent=h.occLow+'%'; }
