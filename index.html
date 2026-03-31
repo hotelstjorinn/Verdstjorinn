@@ -1085,7 +1085,7 @@ function fmt(n){ return Math.round(n).toLocaleString('is-IS')+' kr'; }
 function save() {
   renderDashboard();
   renderRevenue();
-  renderSegPrices();
+  renderSegPrices(); 
   renderAfslattir(); 
   if(G('page-reiknir').classList.contains('active')) calcPrice();
   if(G('page-sertimar').classList.contains('active')) renderCalendar();
@@ -1295,7 +1295,7 @@ function calcPrice(){
   const dateStr=sval('calc-date');
   if(!dateStr){G('price-result').innerHTML='<div style="color:var(--muted);font-size:14px">Veldu dagsetningu</div>';return;}
   const d=new Date(dateStr);
-  const dayOfWeek=d.getDay(); // 0=sun,1=mon...6=sat
+  const dayOfWeek=d.getDay(); 
   const month=d.getMonth();
   const lead=parseInt(sval('calc-lead'));
   const currOcc=val('calc-occ')/100;
@@ -1378,7 +1378,7 @@ function renderRevenue(){
   const tax=val('tax');
   const cardFee=val('card-fee')/100;
   const otaFee=val('ota-fee')/100;
-  const otaShare=0.70; // assumed 70% via OTA
+  const otaShare=0.70; 
 
   let totalRev=0,totalNet=0,totalNights=0;
   const badges=['winter','winter','winter','winter','shoulder','summer','summer','summer','shoulder','shoulder','winter','winter'];
@@ -1387,9 +1387,8 @@ function renderRevenue(){
   MONTHS.forEach((m,i)=>{
     const occ=OCC_TYPE[i]==='high'?occHigh:OCC_TYPE[i]==='mid'?occMid:occLow;
     const base=getBasePrice(i);
-    // Apply avg weekend premium (~2 weekends * 2 days)
     const weekendBoost=(val('fri-prem')+val('sat-prem'))/2;
-    const avgMod=weekendBoost*(8/DAYS[i]); // rough: 8 weekend nights
+    const avgMod=weekendBoost*(8/DAYS[i]); 
     const avg=Math.round(base*(1+avgMod/100));
     const nights=Math.round(rooms*DAYS[i]*occ);
     const rev=nights*avg;
@@ -1482,6 +1481,42 @@ function renderAfslattir() {
   if(G('active-discounts-list')) {
     G('active-discounts-list').innerHTML = activeRules.map(r => `<div style="background:var(--surface2); padding:10px; border-radius:var(--r); font-size:13px">${r}</div>`).join('');
   }
+}
+
+// ── HLUTDEILDAVERÐ (Bætt við til að koma í veg fyrir villu) ────────
+function renderSegPrices() {
+  const tbody = G('seg-table-body');
+  if(!tbody) return;
+
+  const otaPct = val('seg-ota') / 100;
+  const dirPct = val('seg-direct') / 100;
+  const corpPct = val('seg-corp') / 100;
+  const tax = val('tax');
+  const otaFee = val('ota-fee') / 100;
+
+  let html = '';
+  MONTHS.forEach((m, i) => {
+    const base = getBasePrice(i);
+    const otaPrice = Math.round(base * (1 + otaPct) / 500) * 500;
+    const dirPrice = Math.round(base * (1 + dirPct) / 500) * 500;
+    const corpPrice = Math.round(base * (1 + corpPct) / 500) * 500;
+
+    const diff = otaPrice - dirPrice;
+    const netOta = otaPrice - tax - (otaPrice * otaFee);
+    const netDir = dirPrice - tax; 
+
+    html += `<tr>
+      <td>${m}</td>
+      <td style="font-family:'DM Mono',monospace">${fmt(base)}</td>
+      <td style="color:#f4a261;font-family:'DM Mono',monospace">${fmt(otaPrice)}</td>
+      <td style="color:#4ade80;font-family:'DM Mono',monospace">${fmt(dirPrice)}</td>
+      <td style="color:#7dd3fc;font-family:'DM Mono',monospace">${fmt(corpPrice)}</td>
+      <td style="font-family:'DM Mono',monospace">${fmt(diff)}</td>
+      <td style="font-family:'DM Mono',monospace">${fmt(netOta)}</td>
+      <td style="font-family:'DM Mono',monospace">${fmt(netDir)}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
 }
 
 // ── AI Chat (Gemini) ──────────────────────────────────────────────────────
@@ -1606,7 +1641,11 @@ async function findHotelId(index) {
         save();
      }
   } catch(e) {
-     idInput.value = "API Villa";
+     if (e.message.includes("403")) {
+         idInput.value = "Aðgangi hafnað (403)";
+     } else {
+         idInput.value = "API Villa";
+     }
      console.error("Booking API Error:", e);
      save();
   }
@@ -1624,7 +1663,7 @@ async function fetchBookingPrices() {
   for(let i=1; i<=5; i++) {
     const name = G(`comp${i}-name`)?.value;
     const id = G(`comp${i}-id`)?.value;
-    if(name && id && id !== "Fannst ekki" && id !== "API Villa" && id !== "Leita...") {
+    if(name && id && id !== "Fannst ekki" && id !== "API Villa" && id !== "Leita..." && id !== "Aðgangi hafnað (403)") {
       competitors.push({ name, id, price: 0 });
     }
   }
