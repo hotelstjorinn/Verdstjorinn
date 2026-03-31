@@ -7,22 +7,22 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0f0f11;
-  --surface: #18181c;
-  --surface2: #222228;
-  --surface3: #2a2a32;
-  --border: rgba(255,255,255,0.08);
-  --border2: rgba(255,255,255,0.14);
-  --text: #e8e8ec;
-  --muted: #888894;
-  --accent: #c8f04a;
-  --accent2: #7dd3fc;
-  --accent3: #f4a261;
-  --accent4: #e76f51;
-  --green: #4ade80;
-  --red: #f87171;
-  --r: 10px;
-  --r2: 16px;
+  --bg: #0f0f11;
+  --surface: #18181c;
+  --surface2: #222228;
+  --surface3: #2a2a32;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #e8e8ec;
+  --muted: #888894;
+  --accent: #c8f04a;
+  --accent2: #7dd3fc;
+  --accent3: #f4a261;
+  --accent4: #e76f51;
+  --green: #4ade80;
+  --red: #f87171;
+  --r: 10px;
+  --r2: 16px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; font-size: 14px; min-height: 100vh; }
@@ -61,9 +61,9 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 .field { margin-bottom: 16px; }
 .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; letter-spacing: .04em; }
 .field input, .field select, .field textarea {
-  width: 100%; background: var(--surface2); border: 1px solid var(--border2);
-  border-radius: var(--r); padding: 9px 12px; color: var(--text); font-family: 'Outfit', sans-serif;
-  font-size: 14px; outline: none; transition: border .15s;
+  width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 9px 12px; color: var(--text); font-family: 'Outfit', sans-serif;
+  font-size: 14px; outline: none; transition: border .15s;
 }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
 .field input[type=range] { padding: 4px 0; border: none; background: transparent; accent-color: var(--accent); }
@@ -280,6 +280,22 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
 .alert { padding: 12px 16px; border-radius: var(--r); font-size: 13px; margin-bottom: 16px; border-left: 3px solid; }
 .alert-info { background: rgba(125,211,252,0.08); border-color: var(--accent2); color: var(--accent2); }
 .alert-warn { background: rgba(244,162,97,0.08); border-color: var(--accent3); color: var(--accent3); }
+
+/* ─── SÍMAVIÐMÓT (MOBILE RESPONSIVE) ─── */
+@media (max-width: 768px) {
+  .shell { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; padding: 0; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; overflow-x: auto; white-space: nowrap; z-index: 100; align-items: center; }
+  .logo, .nav-section { display: none; }
+  .nav-item { flex-shrink: 0; padding: 12px 16px; border-left: none; border-bottom: 2px solid transparent; }
+  .nav-item.active { border-left: none; border-bottom-color: var(--accent); background: rgba(200,240,74,0.06); }
+  .main { padding: 16px 12px; }
+  .page-title { font-size: 24px; }
+  .dash-kpi-grid, .dash-grid, .dash-grid-wide, .stats-row, .card-grid, .card-grid-3, .field-row, .field-row-3 { grid-template-columns: 1fr; display: flex; flex-direction: column; gap: 12px; }
+  #base-prices-grid { grid-template-columns: 1fr 1fr !important; display: grid !important; }
+  .card { overflow-x: auto; padding: 16px; }
+  .month-table { white-space: nowrap; }
+  .price-big, .today-big { font-size: 36px; }
+}
 </style>
 </head>
 <body>
@@ -1976,7 +1992,7 @@ function renderDashboard(){
       <div class="event-mini-name">${e.name}</div>
       <div class="event-mini-date">${e.dates}</div>
       <div class="event-mini-price">${fmt(e.price)}</div>
-    </div>`).join('')||'<div style="color:var(--muted);font-size:13px">Engir sérdagar skráðir</div>';
+    </div>`).join('')||'<div style="color:var(--muted);font-size:13px">Engir sérdagar ársins skráðir</div>';
 
   const comp=[
     {name:'Hótel Stafholt',stars:'★★★',price:30000,you:true},
@@ -2351,7 +2367,7 @@ function getNextRun(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// DEILA / AFRIT — Export & Import
+// DEILA / AFRIT — SAFNA GÖGNUM
 // ══════════════════════════════════════════════════════════════════════════
 function gatherAllSettings(){
   const baseprices=MONTHS.map((_,i)=>parseInt(G('bp-'+i)?.value)||BASE_PRICES[i]);
@@ -2472,7 +2488,7 @@ function renderSyncPage(){
     G('export-summary').innerHTML=`
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
         <div><div style="color:var(--accent);font-family:'DM Mono',monospace;font-size:16px">${data.hotel?.name||'–'}</div><div style="font-size:10px;color:var(--muted)">Hótel</div></div>
-        <div><div style="color:var(--text);font-family:'DM Mono',monospace;font-size:16px">${evCount}</div><div style="font-size:10px;color:var(--muted)">Sérdagar á dagatali</div></div>
+        <div><div style="color:var(--text);font-family:'DM Mono',monospace;font-size:16px">${evCount}</div><div style="font-size:10px;color:var(--muted)">Sérdagar ársins</div></div>
         <div><div style="color:var(--text);font-family:'DM Mono',monospace;font-size:16px">${pickupCount}</div><div style="font-size:10px;color:var(--muted)">Pick-up skráningar</div></div>
         <div><div style="color:var(--muted);font-size:11px;padding-top:4px">Síðast uppfært:<br>${new Date().toLocaleDateString('is-IS')}</div></div>
       </div>`;
@@ -2501,19 +2517,57 @@ window.onload = function() {
   const saved = localStorage.getItem('hotel_settings_live');
   if (saved) {
     try {
-      G('import-json').value = saved;
-      importSettings();
-      G('import-json').value = '';
-      G('import-result').innerHTML = '';
+      const data=JSON.parse(saved);
+      if(data.hotel){
+        const h=data.hotel;
+        if(G('hotel-name')&&h.name) G('hotel-name').value=h.name;
+        if(G('hotel-loc')&&h.loc) G('hotel-loc').value=h.loc;
+        if(G('rooms-low')&&h.roomsLow) G('rooms-low').value=h.roomsLow;
+        if(G('rooms-high')&&h.roomsHigh) G('rooms-high').value=h.roomsHigh;
+        if(G('occ-low')&&h.occLow){ G('occ-low').value=h.occLow; G('occ-low-v').textContent=h.occLow+'%'; }
+        if(G('occ-mid')&&h.occMid){ G('occ-mid').value=h.occMid; G('occ-mid-v').textContent=h.occMid+'%'; }
+        if(G('occ-high')&&h.occHigh){ G('occ-high').value=h.occHigh; G('occ-high-v').textContent=h.occHigh+'%'; }
+        if(G('tax')&&h.tax) G('tax').value=h.tax;
+        if(G('card-fee')&&h.cardFee) G('card-fee').value=h.cardFee;
+        if(G('ota-fee')&&h.otaFee) G('ota-fee').value=h.otaFee;
+      }
+      if(data.baseprices&&Array.isArray(data.baseprices)){
+        data.baseprices.forEach((p,i)=>{ const el=G('bp-'+i); if(el) el.value=p; });
+      }
+      if(data.rules){
+        Object.entries(data.rules).forEach(([id,v])=>{ const el=G(id); if(el) el.value=v; });
+      }
+      if(data.events&&Array.isArray(data.events)){
+        events.length=0; data.events.forEach(e=>events.push(e));
+      }
+      if(data.calDayEvents){
+        calDayEvents=data.calDayEvents;
+        try{localStorage.setItem('cal_events',JSON.stringify(calDayEvents));}catch(e){}
+      }
+      if(data.seg){
+        if(G('seg-ota')&&data.seg.ota) G('seg-ota').value=data.seg.ota;
+        if(G('seg-direct')&&data.seg.direct) G('seg-direct').value=data.seg.direct;
+        if(G('seg-corp')&&data.seg.corp) G('seg-corp').value=data.seg.corp;
+      }
+      if(data.ap){
+        const a=data.ap;
+        if(G('ap-floor')&&a.floor) G('ap-floor').value=a.floor;
+        if(G('ap-ceiling')&&a.ceiling) G('ap-ceiling').value=a.ceiling;
+        if(G('ap-maxchange')&&a.maxchange) G('ap-maxchange').value=a.maxchange;
+        if(G('ap-roomid')&&a.roomid) G('ap-roomid').value=a.roomid;
+      }
+      if(data.pickupLog&&Array.isArray(data.pickupLog)){
+        try{localStorage.setItem('pickup_log',JSON.stringify(data.pickupLog));}catch(e){}
+      }
     } catch(e) {}
-  } else {
-    calcPrice();
-    renderRevenue();
-    renderDashboard();
-    renderSegPrices();
-    renderApLog();
-    loadCalEvents();
   }
+  
+  calcPrice();
+  renderRevenue();
+  renderDashboard();
+  renderSegPrices();
+  renderApLog();
+  loadCalEvents();
 };
 </script>
 </body>
